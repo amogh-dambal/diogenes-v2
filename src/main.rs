@@ -10,6 +10,9 @@ fn main() {
     let q = 40;
     let res = subt(p, q);
     println!("{p} - {q} = {res}");
+
+
+    
 }
 
 fn add(i: i32, j: i32) -> i32 {
