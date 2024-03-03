@@ -1,4 +1,4 @@
-use super::square::Square;
+use crate::square::Square;
 
 use num_traits;
 

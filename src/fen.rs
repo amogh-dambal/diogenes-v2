@@ -1,45 +1,56 @@
-use super::types::Piece;
-use super::types::Color;
-use super::types::NUM_COLORS;
-use super::square::Square;
+use num_traits::{FromPrimitive, ToPrimitive};
+use strum::IntoEnumIterator;
+
+use crate::bitboard::Bitboard;
+use crate::board::{File, Rank};
+use crate::piece::{Piece, NUM_UNIQUE_PIECES};
+use crate::color::{Color, NUM_COLORS};
+use crate::square::Square;
 
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-pub fn get_piece(c: char) -> (Piece, Color) {
-    match c {
-        'p' => {(Piece::Pawn, Color::Black)}
-        'n' => {(Piece::Knight, Color::Black)}
-        'b' => {(Piece::Bishop, Color::Black)}
-        'r' => {(Piece::Rook, Color::Black)}
-        'q' => {(Piece::Queen, Color::Black)}
-        'k' => {(Piece::King, Color::Black)}
-        'P' => {(Piece::Pawn, Color::White)}
-        'N' => {(Piece::Knight, Color::White)}
-        'B' => {(Piece::Bishop, Color::White)}
-        'R' => {(Piece::Rook, Color::White)}
-        'Q' => {(Piece::Queen, Color::White)}
-        'K' => {(Piece::King, Color::White)}
-        _ => {panic!("Invalid string in FEN")}
-    }
-}
-
-// Parse the first field in a (valid) FEN string and return the
-// piece bitboards that represent this position.
-pub fn parse_pieces(field: &str) -> [u64; 8] {
-    // In FEN notation, the 8th rank is written first. Since we want to 
-    // populate ranks in ascending order, we need to reverse this iterator.
-    let ranks = field.rsplit("/");
-    let mut piece_bbs: [u64; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-    for (r, pieces) in ranks.enumerate() {
-        let mut f = 0;
-        for piece in pieces.chars() {
+/// Parse the first field in a FEN string and build bitboards
+/// that represent the position internally.
+pub fn parse_pieces(field: &str) -> [Bitboard; 8] {
+    let mut piece_bbs: [Bitboard; 8] = [Bitboard::default(); 8];
+    for (piece_chars, rank) in field.rsplit("/").zip(Rank::iter()) {
+        let mut file_idx: u32 = 0;
+        for piece in piece_chars.chars() {
+            println!("file: {:?}, rank: {:?}", file_idx, rank);
             match piece.to_digit(10) {
-                Some(skip) => {f += skip},
+                Some(skip) => {
+                    if skip != 8 {
+                        file_idx += skip;
+                    }
+                }
                 None => {
-                    let (p, c) = get_piece(piece);
-                    let bb: u64 = 1 << Square::index(f as u32, r as u32);
+                    let file: File;
+                    match File::from_u32(file_idx) {
+                        Some(f) => {file = f;}
+                        None => panic!("Invalid file!")
+                    }
+
+                    let sq_idx: usize = Square::index(file, rank);
+                    let bb: u64 = 1 << sq_idx;
+    
+                    let p: Piece;
+                    match Piece::try_from(piece) {
+                        Ok(val) => {p = val}
+                        Err(_) => panic!("Invalid FEN string")
+                    }
+
+                    let piece_idx: usize = (NUM_COLORS + (p as i8 % NUM_UNIQUE_PIECES)) as usize;
+                    piece_bbs[piece_idx] |= bb;
+                    
+                    let c: Color;
+                    if piece.is_ascii_uppercase() {
+                        c = Color::White;
+                    } 
+                    else {
+                        c = Color::Black;
+                    }
                     piece_bbs[c as usize] |= bb;
-                    piece_bbs[(NUM_COLORS as usize) + (p as usize)] |= bb;
+                    file_idx += 1;
                 }
             }
         }
@@ -50,30 +61,34 @@ pub fn parse_pieces(field: &str) -> [u64; 8] {
 
 #[cfg(test)]
 mod tests {
-    use std::char;
-
-    use super::get_piece;
-    use super::Piece;
-    use super::Color;
+    use crate::bitboard::Bitboard;
+    use super::parse_pieces;
 
     #[test]
-    fn test_piece_char_match() {
-        let black_piece_chars: [char; 6] = ['p', 'n', 'b', 'r', 'q', 'k'];
-        let pieces: [Piece; 6] = [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen, Piece::King];
-        let mut color: Color = Color::Black;
+    fn test_parse_pieces() {
+        let white_pieces = Bitboard::new(0xFFFF);
+        let black_pieces = Bitboard::new(0xFFFF).flip_vertical();
+        let pawns = Bitboard::new(0xFF00) | Bitboard::new(0xFF00).flip_vertical();
+        let knights = Bitboard::new(0x42) | Bitboard::new(0x42).flip_vertical();
+        let bishops = Bitboard::new(0x24) | Bitboard::new(0x24).flip_vertical();
+        let rooks = Bitboard::new(0x81) | Bitboard::new(0x81).flip_vertical();
+        let queens = Bitboard::new(0x08) | Bitboard::new(0x08).flip_vertical();
+        let kings = Bitboard::new(0x10) | Bitboard::new(0x10).flip_vertical();
 
-        for (i, char) in black_piece_chars.iter().enumerate() {
-            let (p, c) = get_piece(*char);
-            assert_eq!(p, pieces[i]);
-            assert_eq!(c, color);
-        }
+        let actual_bbs = parse_pieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        let expected_bbs: [Bitboard; 8] = [
+            white_pieces, // white pieces
+            black_pieces, // black pieces
+            pawns, // pawns
+            knights, // knights
+            bishops, // bishops
+            rooks, // rooks
+            queens, // queens
+            kings, // kings
+        ];
 
-        color = Color::White;
-        let white_piece_chars: [char; 6] = ['P', 'N', 'B', 'R', 'Q', 'K'];
-        for (i, char) in white_piece_chars.iter().enumerate() {
-            let (p, c) = get_piece(*char);
-            assert_eq!(p, pieces[i]);
-            assert_eq!(c, color);
+        for (actual, expected) in actual_bbs.iter().zip(expected_bbs) {
+            assert_eq!(*actual, expected, "Testing bitboards {:#064b} and {:#064b}", actual, expected);
         }
     }
 }

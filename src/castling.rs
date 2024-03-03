@@ -1,4 +1,6 @@
-use super::types::Color;
+use std::{fmt::Display, str::FromStr};
+
+use crate::color::Color;
 
 #[derive(Debug)]
 pub struct CastlingRights {
@@ -7,6 +9,62 @@ pub struct CastlingRights {
      * Pulled from FEN notation. Top 4 bits are wasted, unfortunately
      */
     data: u8,
+}
+
+impl FromStr for CastlingRights {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() > 4 {
+            return Err("Invalid input string!");
+        }
+        
+        let mut cr: CastlingRights = CastlingRights{data: 0};
+        if s.eq("-") {
+            return Ok(cr);
+        }
+
+        if s.contains("K") {
+            cr.data |= KINGSIDES[Color::White as usize];
+        }
+        if s.contains("Q") {
+            cr.data |= QUEENSIDES[Color::White as usize];
+        }
+        if s.contains("k") {
+            cr.data |= KINGSIDES[Color::Black as usize];
+        }
+        if s.contains("q") {
+            cr.data |= QUEENSIDES[Color::Black as usize];
+        }
+        return Ok(cr);
+    }
+}
+
+impl Display for CastlingRights {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.data == 0 {
+            return write!(f, "-");
+        }
+
+        let mut s = String::new();
+        if self.kingside(Color::White) {
+            s += "K";
+        }
+
+        if self.queenside(Color::White) {
+            s += "Q";
+        }
+
+        if self.kingside(Color::Black) {
+            s += "k";
+        }
+
+        if self.queenside(Color::Black) {
+            s += "q";
+        }
+
+        return write!(f, "{}", s);
+    }
 }
 
 impl Default for CastlingRights {
@@ -21,32 +79,6 @@ const KINGSIDES: [u8; 2] = [0b00001000, 0b00000010];
 const QUEENSIDES: [u8; 2] = [0b00000100, 0b00000001];
 
 impl CastlingRights {
-    #![allow(arithmetic_overflow)]
-    pub fn from_str(s: &str) -> CastlingRights {
-        if s.len() > 4 {
-            panic!("Invalid input string!")
-        }
-        
-        let mut cr: CastlingRights = CastlingRights{data: 0};
-        if s.eq("-") {
-            return cr;
-        }
-
-        if s.contains("K") {
-            cr.data |= KINGSIDES[Color::White as usize];
-        }
-        if s.contains("Q") {
-            cr.data |= QUEENSIDES[Color::White as usize];
-        }
-        if s.contains("k") {
-            cr.data |= KINGSIDES[Color::Black as usize];
-        }
-        if s.contains("q") {
-            cr.data |= QUEENSIDES[Color::White as usize];
-        }
-        
-        return cr;
-    }
 
     fn kingside(&self, c: Color) -> bool {
         return (self.data & KINGSIDES[c as usize]) != 0;
@@ -59,8 +91,10 @@ impl CastlingRights {
 
 #[cfg(test)]
 mod tests {
-    use super::CastlingRights;
-    use super::Color;
+    use std::str::FromStr;
+
+    use crate::castling::CastlingRights;
+    use crate::color::Color;
 
     struct Testcase {
         input: &'static str,
@@ -79,11 +113,20 @@ mod tests {
                 white_kingside: true,
                 white_queenside: true,
                 input: "KQ",
+            },
+            Testcase{
+                black_kingside: true,
+                black_queenside: true,
+                white_kingside: true,
+                white_queenside: true,
+                input: "KQkq",
             }
         ];
 
         for tc in testcases {
-            let cr: CastlingRights = CastlingRights::from_str(tc.input);
+            let res = CastlingRights::from_str(tc.input);
+            assert!(res.is_ok());
+            let cr = res.unwrap();            
             assert_eq!(tc.black_kingside, cr.kingside(Color::Black));
             assert_eq!(tc.black_queenside, cr.queenside(Color::Black));
             assert_eq!(tc.white_kingside, cr.kingside(Color::White));

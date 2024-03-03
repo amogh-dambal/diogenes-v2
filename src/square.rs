@@ -1,11 +1,18 @@
 use core::fmt;
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;
+use num_traits::ToPrimitive;
+
+use crate::board::File;
+use crate::board::Rank;
 
 
+/// Uses Little Endian Rank-File square mapping
+/// to translate indices in a 64-bit integer to 
+/// a square on the chess board. In this mapping,
+/// LSB points to A1 and the MSB points to H8. 
 #[derive(Debug, Default, FromPrimitive, PartialEq, ToPrimitive)]
 pub enum Square {
-    // Uses LERF mapping - little endian rank file
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -20,15 +27,32 @@ pub enum Square {
 
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s: String = format!("{:?}", &self).to_lowercase();
-        return write!(f, "{}", s);
+        if *self == Square::NONE {
+            return write!(f, "-");
+        }
+        else {
+            let s = format!("{:?}", &self).to_ascii_lowercase();
+            return write!(f, "{}", s);
+        }
     }
 }
 
 
 impl Square {
-    pub fn index(f: u32, r: u32) -> u32 {
-        return 8 * r + f;
+    pub fn index(file: File, rank: Rank) -> usize {
+        let f: u64;
+        match file.to_u64() {
+            Some(val) => {f = val;}
+            None => panic!("Invalid file!")
+        }
+
+        let r: u64;
+        match rank.to_u64() {
+            Some(val) => {r = val;}
+            None => panic!("Invalid file!")
+        }
+
+        return ((8 * r) + f) as usize;
     }
 
     pub fn from_str(s: &str) -> Square {
