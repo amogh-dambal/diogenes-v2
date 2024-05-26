@@ -1,11 +1,11 @@
-use num_traits::{FromPrimitive, ToPrimitive};
+use num_traits::FromPrimitive;
 use strum::IntoEnumIterator;
 
 use crate::bitboard::Bitboard;
-use crate::board::{File, Rank};
+use crate::board::{self, File, Rank};
 use crate::piece::{Piece, NUM_UNIQUE_PIECES};
 use crate::color::{Color, NUM_COLORS};
-use crate::square::Square;
+
 
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -30,7 +30,7 @@ pub fn parse_pieces(field: &str) -> [Bitboard; 8] {
                         None => panic!("Invalid file!")
                     }
 
-                    let sq_idx: usize = Square::index(file, rank);
+                    let sq_idx: usize = board::index(file, rank);
                     let bb: u64 = 1 << sq_idx;
     
                     let p: Piece;

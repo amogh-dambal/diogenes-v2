@@ -1,32 +1,37 @@
-use std::fmt::Binary;
-use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign};
+use std::fmt::{Binary, Display, Write};
+use std::ops::{
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
+    ShrAssign,
+};
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::ToPrimitive;
+use strum::IntoEnumIterator;
 
-
-use crate::board;
+use crate::board::{self, File, Rank};
 use crate::direction::Direction;
+use crate::square::Square;
 
 const DEBRUIJN_LOOKUP: [i32; 64] = [
-    0, 47,  1, 56, 48, 27,  2, 60,
-    57, 49, 41, 37, 28, 16,  3, 61,
-    54, 58, 35, 52, 50, 42, 21, 44,
-    38, 32, 29, 23, 17, 11,  4, 62,
-    46, 55, 26, 59, 40, 36, 15, 53,
-    34, 51, 20, 43, 31, 22, 10, 45,
-    25, 39, 14, 33, 19, 30,  9, 24,
-    13, 18,  8, 12,  7,  6,  5, 63
+    0, 47, 1, 56, 48, 27, 2, 60, 57, 49, 41, 37, 28, 16, 3, 61, 54, 58, 35, 52, 50, 42, 21, 44, 38,
+    32, 29, 23, 17, 11, 4, 62, 46, 55, 26, 59, 40, 36, 15, 53, 34, 51, 20, 43, 31, 22, 10, 45, 25,
+    39, 14, 33, 19, 30, 9, 24, 13, 18, 8, 12, 7, 6, 5, 63,
 ];
 const DEBRUIJN_MAGIC_VAL: u64 = 0x03f79d71b4cb0a89;
 
-#[derive(
-    Clone, Copy, Default, Debug, 
-    PartialEq, Eq,
-    FromPrimitive, ToPrimitive,
-)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub struct Bitboard(u64);
 
+impl From<&Square> for Bitboard {
+    fn from(value: &Square) -> Self {
+        let shift = value.to_u64().expect("Invalid square!");
+        return Bitboard(1 << shift);
+    }
+}
+
+/// Binary operation trait implementations
+/// for our Bitboard to allow us to overload
+/// shifts, AND/OR, etc
 impl Binary for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         return write!(f, "{:b}", self.0);
@@ -98,80 +103,99 @@ impl Not for Bitboard {
     }
 }
 
-impl Shl<usize> for Bitboard {
+impl Shl<isize> for Bitboard {
     type Output = Self;
-    fn shl(self, rhs: usize) -> Self::Output {
-        return Self(self.0 << rhs);
+    fn shl(self, rhs: isize) -> Self::Output {
+        if rhs > 0 {
+            return Self(self.0 << rhs);
+        } else {
+            return Self(self.0 >> -rhs);
+        }
     }
 }
 
-impl ShlAssign<usize> for Bitboard {
-    fn shl_assign(&mut self, rhs: usize) {
-        self.0 <<= rhs;
+impl ShlAssign<isize> for Bitboard {
+    fn shl_assign(&mut self, rhs: isize) {
+        if rhs > 0 {
+            self.0 <<= rhs;
+        } else {
+            self.0 >>= -rhs;
+        }
     }
 }
 
-impl Shr<usize> for Bitboard {
+impl Shr<isize> for Bitboard {
     type Output = Self;
-    fn shr(self, rhs: usize) -> Self::Output {
-        return Self(self.0 >> rhs);
+    fn shr(self, rhs: isize) -> Self::Output {
+        if rhs > 0 {
+            return Self(self.0 >> rhs);
+        } else {
+            return Self(self.0 << -rhs);
+        }
     }
 }
 
-impl ShrAssign<usize> for Bitboard {
-    fn shr_assign(&mut self, rhs: usize) {
-        self.0 >>= rhs;
+impl ShrAssign<isize> for Bitboard {
+    fn shr_assign(&mut self, rhs: isize) {
+        if rhs > 0 {
+            self.0 >>= rhs;
+        } else {
+            self.0 <<= -rhs;
+        }
+    }
+}
+
+impl Display for Bitboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s = String::new();
+        for rank in Rank::iter().rev() {
+            for file in File::iter() {
+                let idx = board::index(file, rank);
+                let k = 1 << idx;
+
+                if &self.0 & k != 0 {
+                    write!(s, "{}", 1)?;
+                } else {
+                    write!(s, ".")?;
+                }
+            }
+            write!(s, "\n")?;
+        }
+        return write!(f, "{}", s);
     }
 }
 
 impl Bitboard {
     pub fn new(data: u64) -> Bitboard {
-        Bitboard{0: data}
+        Bitboard { 0: data }
     }
 
     pub fn bool(&self) -> bool {
         return self.0 != 0;
     }
 
-    // Shift functions to move a bitboard in a compass rose direction 
-    pub fn north(&mut self) {
-        let shift = Direction::N.to_i64().expect("Invalid direction!");
-        self.0 <<= shift;
+    /// Generic fill algorithms that use Dumb7 fill
+    /// to fill a bitboard in a specific direction
+    /// with a specific propagator. These are used to compute various attack
+    /// sets.
+    /// TODO: If we want to optimize performance, we can
+    /// unroll this loop.
+    pub fn fill_all(&self, dir: &impl Direction) -> Bitboard {
+        let mut flood = Bitboard(self.0);
+        for _ in 0..=7 {
+            flood |= flood.fill_one(dir);
+        }
+
+        return flood;
     }
 
-    pub fn northeast(&mut self) {
-        let shift = Direction::NE.to_i64().expect("Invalid direction");
-        self.0 = (self.0 << shift) & board::NOT_A_FILE;
-    }
-
-    pub fn east(&mut self) {
-        let shift = Direction::E.to_i64().expect("Invalid direction");
-        self.0 = (self.0 << shift) & board::NOT_A_FILE;
-    }
-    
-    pub fn southeast(&mut self) {
-        let shift = -Direction::SE.to_i64().expect("Invalid direction");
-        self.0 = (self.0 >> shift) & board::NOT_A_FILE;
-    }
-
-    pub fn south(&mut self) {
-        let shift = -Direction::S.to_i64().expect("Invalid direction");
-        self.0 >>= shift;
-    }
-
-    pub fn southwest(&mut self) {
-        let shift = -Direction::SW.to_i64().expect("Invalid direction");
-        self.0 = (self.0 >> shift) & board::NOT_H_FILE;
-    }
-
-    pub fn west(&mut self) {
-        let shift = -Direction::W.to_i64().expect("Invalid direction");
-        self.0 = (self.0 >> shift) & board::NOT_H_FILE;
-    }
-
-    pub fn northwest(&mut self) {
-        let shift = Direction::NW.to_i64().expect("Invalid direction");
-        self.0 = (self.0 << shift) & board::NOT_H_FILE;
+    pub fn fill_one(&self, dir: &impl Direction) -> Bitboard {
+        let mut result = Bitboard(self.0);
+        let shift = dir.get_shift();
+        let mask = dir.get_wraparound_mask();
+        result |= (result << shift) & mask;
+        
+        return result;
     }
 
     // Utility functions to compute information about bitboards
@@ -182,29 +206,29 @@ impl Bitboard {
         let k1: u64 = 0x00FF00FF00FF00FF;
         let k2: u64 = 0x0000FFFF0000FFFF;
         let mut x: u64 = self.0;
-        x = ((x >>  8) & k1) | ((x & k1) <<  8);
+        x = ((x >> 8) & k1) | ((x & k1) << 8);
         x = ((x >> 16) & k2) | ((x & k2) << 16);
-        x = ( x >> 32)       | ( x       << 32);
-        
+        x = (x >> 32) | (x << 32);
+
         return Bitboard(x);
     }
 
     /// Compute the number of set bits in the bitboard.
-    /// 
-    /// Uses Brian Kernighan's loop-based algorithm, which 
+    ///
+    /// Uses Brian Kernighan's loop-based algorithm, which
     /// is more performant for sparsely populated bitboards.
     pub fn popcount(&self) -> i32 {
         let mut pc: i32 = 0;
         let mut val = self.0;
         while val != 0 {
             pc += 1;
-            val &= val-1;
+            val &= val - 1;
         }
         return pc;
     }
 
     /// Returns the index of the LS1B (least significant 1 bit)
-    /// 
+    ///
     /// Uses a DeBruijn lookup table to compute the index of
     /// the least significant 1 bit set in the given bitboard.
     /// Assume that indices increase going from right to left.
@@ -216,12 +240,12 @@ impl Bitboard {
 
         // Need the wrapped version of the function because the algorithm
         // relies on overflow behavior which is disallowed by default.
-        let key: u64 = u64::wrapping_mul(val ^ val-1, DEBRUIJN_MAGIC_VAL) >> 58;
+        let key: u64 = u64::wrapping_mul(val ^ val - 1, DEBRUIJN_MAGIC_VAL) >> 58;
         return DEBRUIJN_LOOKUP[key as usize];
     }
 
     /// Returns the index of the MS1B (most significant 1 bit)
-    /// 
+    ///
     /// Uses a DeBruijn lookup table to compute the index of
     /// the most significant 1 bit set in the given bitboard.
     /// Assume that indices increase going from right to left.
@@ -248,16 +272,17 @@ impl Bitboard {
         let mut bb: Bitboard = Bitboard(self.0);
         while bb.0 != 0 {
             indices.push(bb.bitscan_forward() as usize);
-            bb.0 &= bb.0-1;
+            bb.0 &= bb.0 - 1;
         }
 
         return indices;
-
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{board, direction::RayDirection};
+
     use super::Bitboard;
     use rand::Rng;
 
@@ -268,9 +293,27 @@ mod tests {
 
         let unset_bb = Bitboard(0);
         assert!(!unset_bb.bool());
-        
+
         let default_bb = Bitboard::default();
         assert!(!default_bb.bool());
+    }
+
+    #[test]
+    fn test_fill() {
+        let x = Bitboard(0xFF00);
+        let x_south = Bitboard(0xFFFF);
+        assert_eq!(x_south, x.fill_all(&RayDirection::S));
+
+        let x_north = Bitboard(0xFFFFFFFFFFFFFF00);
+        println!("x_fill_all:\n{}", x.fill_all(&RayDirection::N));
+        println!("x_north:\n{}", x_north);
+        
+        assert_eq!(x_north, x.fill_all(&RayDirection::N));
+
+        let y = Bitboard(0b1).fill_all(&RayDirection::N);
+        let y_east = Bitboard(board::ALL_SQUARES);
+        assert_eq!(y_east, y.fill_all(&RayDirection::E));
+        assert_eq!(y, y.fill_all(&RayDirection::W));
     }
 
     #[test]
@@ -304,7 +347,7 @@ mod tests {
         let mut bb: Bitboard = Bitboard(0);
         for i in 0..=63 {
             bb.0 |= 1 << i;
-            assert_eq!(i+1, bb.popcount());
+            assert_eq!(i + 1, bb.popcount());
         }
     }
 
@@ -326,15 +369,16 @@ mod tests {
             &mut rand::thread_rng(),
             63,
             rand::thread_rng().gen_range(0..=63),
-        ).into_vec();
-        
+        )
+        .into_vec();
+
         let mut bb: Bitboard = Bitboard(0);
         for idx in &sample_indices {
             let i: u64 = *idx as u64;
             bb.0 |= 1 << i;
         }
         let mut indices: Vec<usize> = bb.serialize();
-        
+
         // Allows us to more easily compare two vectors
         indices.sort();
         sample_indices.sort();
@@ -344,7 +388,8 @@ mod tests {
             .zip(indices)
             .filter(|&(a, b)| *a == b)
             .count();
-        
+
         assert_eq!(matching, sample_indices.len());
     }
 }
+

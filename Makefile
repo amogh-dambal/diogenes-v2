@@ -7,7 +7,6 @@ default: build_release
 
 docker:
 	docker run --rm -it -v "$(PWD)":/usr/src/diogenes -w /usr/src/diogenes rust:latest
-
 clean:
 	@echo "Cleaning build dir"
 	@rm -rf target/*

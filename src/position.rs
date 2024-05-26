@@ -6,6 +6,7 @@ use std::str::FromStr;
 use strum::IntoEnumIterator;
 
 use crate::bitboard::Bitboard;
+use crate::board;
 use crate::board::{File, Rank};
 use crate::castling::CastlingRights;
 use crate::fen;
@@ -29,13 +30,14 @@ pub struct Position {
     history: VecDeque<Move>,
 }
 
+
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
 
         for rank in Rank::iter().rev() {
             for file in File::iter() {
-                let idx = Square::index(file, rank);
+                let idx = board::index(file, rank);
                 write!(s, "{} ", self.get_piece_at(idx)).unwrap();
             }
             write!(s, "\n").unwrap();
@@ -87,15 +89,14 @@ impl Position {
             return Piece::None;
         }
     }
-    
+
     pub fn to_fen(&self) -> String {
-        println!("Converting board:\n{} to FEN:", &self);
         let mut pieces = String::new();
 
         for rank in Rank::iter().rev() {
             let mut empty_cnt = 0;
             for file in File::iter() {
-                match self.get_piece_at(Square::index(file, rank)) {
+                match self.get_piece_at(board::index(file, rank)) {
                     Piece::None => {
                         empty_cnt += 1;
                     }
@@ -154,7 +155,7 @@ impl Position {
             Err(_) => {panic!("Invalid FEN string!")}
         }
 
-        let ep_square = Square::from_str(fields[3]);
+        let ep_square = Square::from_str(fields[3]).expect("Invalid FEN string!");
         let ply: i32 = fields[4].parse::<i32>().expect("Invalid FEN string");
         let fullmove: i32 = fields[5].parse::<i32>().expect("Invalid FEN string!");
 
@@ -186,11 +187,12 @@ mod tests {
 
     #[test]
     fn test_build_position_from_random_fen() {
-        let test_fens: [&str; 4] = [
+        let test_fens: [&str; 5] = [
             "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
             "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2",
             "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
             "4k3/8/8/8/8/8/4P3/4K3 w - - 5 39",
+            "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1"
         ];
         for test_fen in test_fens {
             let pos = Position::new_fen(test_fen);
