@@ -1,10 +1,20 @@
-use std::ops::AddAssign;
+use std::{fmt::Debug, ops::AddAssign};
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::{FromPrimitive, ToPrimitive};
-use strum_macros::EnumIter;
 
-#[derive(Clone, Copy, Debug, EnumIter, FromPrimitive, ToPrimitive)]
+use crate::{error::{DiogenesError, DiogenesResult}, square::Square};
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    strum::EnumIter,
+    strum::Display,
+    strum::EnumString,
+    FromPrimitive, 
+    ToPrimitive
+)]
 pub enum File {
     A, B, C, D, E, F, G, H
 }
@@ -18,25 +28,38 @@ impl AddAssign<u32> for File {
     }
 }
 
-#[derive(Clone, Copy, Debug, EnumIter, FromPrimitive, ToPrimitive)]
+#[derive(Clone, Copy, Debug, strum::EnumIter, FromPrimitive, ToPrimitive)]
 pub enum Rank {
     ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT
 }
 
-pub fn index(file: File, rank: Rank) -> usize {
-    let f: u64;
-    match file.to_u64() {
-        Some(val) => {f = val;}
-        None => panic!("Invalid file!")
-    }
+pub fn try_index(file: File, rank: Rank) -> DiogenesResult<usize>
+{
+    let f: usize = file.to_usize().ok_or(DiogenesError::InvalidFileError(format!("{file:#?}")))?;
+    let r: usize = rank.to_usize().ok_or(DiogenesError::InvalidRankError(format!("{file:#?}")))?;
 
-    let r: u64;
-    match rank.to_u64() {
-        Some(val) => {r = val;}
-        None => panic!("Invalid file!")
-    }
+    Ok((8 * r) + f)
+}
 
-    return ((8 * r) + f) as usize;
+pub fn index<T>(file: T, rank: T) -> usize
+where 
+    T: Into<usize>
+{
+    let f: usize = file.into();
+    let r: usize = rank.into();
+    ((8 * r) + f)
+}
+
+pub fn try_square(file: File, rank: Rank) -> Option<Square>
+{
+    Square::from_usize(try_index(file, rank).ok()?)
+}
+
+pub fn square<T>(file: T, rank: T) -> Square
+where
+    T: Into<usize>
+{
+    Square::from_usize(index(file.into(), rank.into())).unwrap()
 }
 
 // Bitboard constants representing specific parts of the chess board 

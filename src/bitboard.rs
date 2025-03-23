@@ -1,7 +1,7 @@
-use std::fmt::{Binary, Display, Write};
+use std::collections::HashSet;
+use std::fmt::{Binary, Debug, Display, Write};
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
-    ShrAssign,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref, Not, Shl, ShlAssign, Shr, ShrAssign
 };
 
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -19,13 +19,25 @@ const DEBRUIJN_LOOKUP: [i32; 64] = [
 ];
 const DEBRUIJN_MAGIC_VAL: u64 = 0x03f79d71b4cb0a89;
 
-#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, FromPrimitive, ToPrimitive)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, FromPrimitive, ToPrimitive)]
 pub struct Bitboard(u64);
 
-impl From<&Square> for Bitboard {
-    fn from(value: &Square) -> Self {
-        let shift = value.to_u64().expect("Invalid square!");
-        return Bitboard(1 << shift);
+impl Debug for Bitboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let set_bits: HashSet<usize> = HashSet::from_iter(self.serialize().into_iter());
+        for rank in (0..=7).rev() {
+            for file in (0..= 7) {
+                let i = board::index(file as usize, rank as usize);
+                if set_bits.contains(&i) {
+                    write!(f, "X ")?;
+                } else {
+                    write!(f, ". ")?;
+                }
+            }
+            write!(f, "\n")?;
+        
+        }
+        write!(f, "\n")
     }
 }
 
@@ -150,7 +162,7 @@ impl Display for Bitboard {
         let mut s = String::new();
         for rank in Rank::iter().rev() {
             for file in File::iter() {
-                let idx = board::index(file, rank);
+                let idx = board::try_index(file, rank).expect("invalid file + rank for index! todo");
                 let k = 1 << idx;
 
                 if &self.0 & k != 0 {
@@ -166,10 +178,17 @@ impl Display for Bitboard {
 }
 
 impl Bitboard {
+    /// Creates a new bitboard from the provided [`u64`].
     pub fn new(data: u64) -> Bitboard {
         Bitboard { 0: data }
     }
 
+    pub fn new_from_square_ref(sq: &Square) -> Bitboard {
+        let shift = sq.to_u64().unwrap();
+        Self(1 << shift)
+    }
+
+    /// Returns the boolean representation of this bitboard.
     pub fn bool(&self) -> bool {
         return self.0 != 0;
     }
@@ -305,9 +324,6 @@ mod tests {
         assert_eq!(x_south, x.fill_all(&RayDirection::S));
 
         let x_north = Bitboard(0xFFFFFFFFFFFFFF00);
-        println!("x_fill_all:\n{}", x.fill_all(&RayDirection::N));
-        println!("x_north:\n{}", x_north);
-        
         assert_eq!(x_north, x.fill_all(&RayDirection::N));
 
         let y = Bitboard(0b1).fill_all(&RayDirection::N);
