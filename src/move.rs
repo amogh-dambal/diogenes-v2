@@ -2,12 +2,13 @@ use crate::square::Square;
 
 use num_traits;
 
+/// A bitfield encoding representing a single move
+/// TODO: Use `zerocopy` or some bitfield equivalent
+/// to encode this better.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Move {
-    /**
-     * 00000000 0000 0000 0000 000000 000000
-     * EMPTYBTS CAPC FRPC SPFG TO--SQ FROMSQ         
-     */
+    /// 00000000 0000 0000 0000 000000 000000
+    /// EMPTYBTS CAPC FRPC SPFG TO--SQ FROMSQ
     data: u32,
 }
 

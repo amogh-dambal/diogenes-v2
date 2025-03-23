@@ -102,8 +102,6 @@ impl Display for Piece {
 }
 
 impl Piece {
-    pub const UNIQUE: usize = 6;
-
     pub fn color(&self) -> Color {
         match self {
             Self::WPawn | 

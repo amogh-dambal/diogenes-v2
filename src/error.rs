@@ -2,6 +2,7 @@ use std::{error::Error, fmt::{Debug, Display}, num::ParseIntError};
 
 use thiserror::Error;
 
+/// TODO: Add better, more descriptive errors
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum DiogenesError {
     #[error("{0:?} is not a valid File")]
