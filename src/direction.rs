@@ -1,5 +1,4 @@
 use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::EnumIter;
 
 use crate::board::{ALL_SQUARES, NOT_AB_FILE, NOT_A_FILE, NOT_GH_FILE, NOT_H_FILE};
 
@@ -9,7 +8,7 @@ pub trait Direction {
 }
 
 
-#[derive(EnumIter, FromPrimitive, ToPrimitive, PartialEq, Eq)]
+#[derive(strum::EnumIter, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum RayDirection {
     N,  // +8
     NE, // +9
@@ -51,7 +50,7 @@ impl Direction for RayDirection {
     }
 }
 
-#[derive(EnumIter, FromPrimitive, ToPrimitive, PartialEq, Eq)]
+#[derive(strum::EnumIter, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum KnightDirection {
     NNE, // +17
     NEE, // +10

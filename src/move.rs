@@ -2,7 +2,7 @@ use crate::square::Square;
 
 use num_traits;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Move {
     /**
      * 00000000 0000 0000 0000 000000 000000

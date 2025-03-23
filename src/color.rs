@@ -1,14 +1,34 @@
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;
 
-use strum_macros::EnumIter;
+use crate::error::DiogenesError;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, FromPrimitive, ToPrimitive, EnumIter)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    FromPrimitive,
+    ToPrimitive,
+    strum::AsRefStr,
+    strum::Display,
+    strum::EnumCount,
+    strum::EnumIter,
+    strum::EnumString,
+    strum::IntoStaticStr,
+)]
+#[strum(
+    parse_err_fn = parse_err_fn,
+    parse_err_ty = DiogenesError,
+)]
 pub enum Color {
-    #[default]
+    #[strum(serialize = "w")]
     White,
+    #[strum(serialize = "b")]
     Black,
-    None,
 }
 
-pub const NUM_COLORS: i8 = 2;
+fn parse_err_fn(s: &str) -> DiogenesError {
+    DiogenesError::InvalidColor(s.to_string())
+}

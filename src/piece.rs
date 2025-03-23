@@ -1,10 +1,11 @@
-use std::{fmt::Display, str::FromStr};
+use std::{fmt::Display, ops::Index, slice::SliceIndex, str::FromStr};
 
-use strum_macros::EnumIter;
+use num_derive::{FromPrimitive, ToPrimitive};
+use num_traits::ToPrimitive;
 
-use crate::color::Color;
+use crate::{bitboard::{Bitboard}, color::Color, error::DiogenesError};
 
-#[derive(Clone, Copy, Debug, PartialEq, EnumIter)]
+#[derive(Clone, Copy, Debug, PartialEq, strum::EnumIter, strum::EnumCount, FromPrimitive, ToPrimitive)]
 pub enum Piece {
     WPawn,
     WKnight,
@@ -18,17 +19,31 @@ pub enum Piece {
     BRook,
     BQueen,
     BKing,
-    None,
 }
 
-pub const NUM_UNIQUE_PIECES: i8 = 6;
-pub const NUM_PIECE_ITER: usize = 12;
-
+impl From<Piece> for usize {
+    fn from(piece: Piece) -> Self {
+        match piece {
+            Piece::WPawn => 0,
+            Piece::WKnight => 1,
+            Piece::WBishop => 2,
+            Piece::WRook => 3,
+            Piece::WQueen => 4,
+            Piece::WKing => 5,
+            Piece::BPawn => 6,
+            Piece::BKnight => 7,
+            Piece::BBishop => 8,
+            Piece::BRook => 9,
+            Piece::BQueen => 10,
+            Piece::BKing => 11,
+        }
+    }
+}
 
 impl TryFrom<char> for Piece {
-    type Error = &'static str;
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        match value {
+    type Error = DiogenesError;
+    fn try_from(c: char) -> Result<Self, Self::Error> {
+        match c {
             'p' => Ok(Piece::BPawn),
             'n' => Ok(Piece::BKnight),
             'b' => Ok(Piece::BBishop),
@@ -41,13 +56,13 @@ impl TryFrom<char> for Piece {
             'R' => Ok(Piece::WRook),
             'Q' => Ok(Piece::WQueen),
             'K' => Ok(Piece::WKing),
-            _ => Err("Invalid piece character!")
+            val => Err(DiogenesError::InvalidPieceError(val.to_string()))
         }
     }
 }
 
 impl FromStr for Piece {
-    type Err = &'static str;
+    type Err = DiogenesError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "p" => Ok(Piece::BPawn),
@@ -62,7 +77,7 @@ impl FromStr for Piece {
             "R" => Ok(Piece::WRook),
             "Q" => Ok(Piece::WQueen),
             "K" => Ok(Piece::WKing),
-            _ => Err("Invalid piece")
+            val => Err(DiogenesError::InvalidPieceError(val.into()))
         }
     }
 }
@@ -82,12 +97,13 @@ impl Display for Piece {
             Piece::WRook => write!(f, "R"),
             Piece::WQueen => write!(f, "Q"),
             Piece::WKing => write!(f, "K"),
-            Piece::None => write!(f, "."),
         }
     }
 }
 
 impl Piece {
+    pub const UNIQUE: usize = 6;
+
     pub fn color(&self) -> Color {
         match self {
             Self::WPawn | 
@@ -102,7 +118,6 @@ impl Piece {
             Self::BRook | 
             Self::BQueen | 
             Self::BKing => Color::Black,
-            _ => Color::None,
         }
     }
 }
