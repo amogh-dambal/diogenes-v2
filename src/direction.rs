@@ -1,3 +1,5 @@
+#![allow(clippy::upper_case_acronyms)]
+
 use num_derive::{FromPrimitive, ToPrimitive};
 
 use crate::board::{ALL_SQUARES, NOT_AB_FILE, NOT_A_FILE, NOT_GH_FILE, NOT_H_FILE};
@@ -23,28 +25,28 @@ pub enum RayDirection {
 impl Direction for RayDirection {
     fn get_shift(&self) -> isize {
         match self {
-            RayDirection::N => return 8,
-            RayDirection::S => return -8,
-            RayDirection::NE => return 9,
-            RayDirection::SW => return -9,
-            RayDirection::E => return 1,
-            RayDirection::W => return -1,
-            RayDirection::NW => return 7,
-            RayDirection::SE => return -7,
+            RayDirection::N => 8,
+            RayDirection::S => -8,
+            RayDirection::NE => 9,
+            RayDirection::SW => -9,
+            RayDirection::E => 1,
+            RayDirection::W => -1,
+            RayDirection::NW => 7,
+            RayDirection::SE => -7,
         }
     }
 
     fn get_wraparound_mask(&self) -> u64 {
         match self {
             RayDirection::E | RayDirection::NE | RayDirection::SE => {
-                return NOT_A_FILE;
+                NOT_A_FILE
             }
             RayDirection::W | RayDirection::NW | RayDirection::SW => {
-                return NOT_H_FILE;
+                NOT_H_FILE
             }
             _ => {
                 // Basically a no-op
-                return ALL_SQUARES;
+                ALL_SQUARES
             }
         }
     }

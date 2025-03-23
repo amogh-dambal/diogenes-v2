@@ -24,7 +24,7 @@ pub struct Bitboard(u64);
 
 impl Debug for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let set_bits: HashSet<usize> = HashSet::from_iter(self.serialize().into_iter());
+        let set_bits: HashSet<usize> = HashSet::from_iter(self.serialize());
         for rank in (0..=7).rev() {
             for file in (0..= 7) {
                 let i = board::index(file as usize, rank as usize);
@@ -34,10 +34,10 @@ impl Debug for Bitboard {
                     write!(f, ". ")?;
                 }
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
         
         }
-        write!(f, "\n")
+        writeln!(f)
     }
 }
 
@@ -46,21 +46,21 @@ impl Debug for Bitboard {
 /// shifts, AND/OR, etc
 impl Binary for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "{:b}", self.0);
+        write!(f, "{:b}", self.0)
     }
 }
 
 impl BitAnd for Bitboard {
     type Output = Self;
     fn bitand(self, rhs: Self) -> Self::Output {
-        return Self(self.0 & rhs.0);
+        Self(self.0 & rhs.0)
     }
 }
 
 impl BitAnd<u64> for Bitboard {
     type Output = Self;
     fn bitand(self, rhs: u64) -> Self::Output {
-        return Self(self.0 & rhs);
+        Self(self.0 & rhs)
     }
 }
 
@@ -73,7 +73,7 @@ impl BitAndAssign<usize> for Bitboard {
 impl BitOr for Bitboard {
     type Output = Self;
     fn bitor(self, rhs: Self) -> Self::Output {
-        return Self(self.0 | rhs.0);
+        Self(self.0 | rhs.0)
     }
 }
 
@@ -98,7 +98,7 @@ impl BitOrAssign<u64> for Bitboard {
 impl BitXor for Bitboard {
     type Output = Self;
     fn bitxor(self, rhs: Self) -> Self::Output {
-        return Self(self.0 ^ rhs.0);
+        Self(self.0 ^ rhs.0)
     }
 }
 
@@ -111,7 +111,7 @@ impl BitXorAssign<usize> for Bitboard {
 impl Not for Bitboard {
     type Output = Self;
     fn not(self) -> Self::Output {
-        return Self(!self.0);
+        Self(!self.0)
     }
 }
 
@@ -119,9 +119,9 @@ impl Shl<isize> for Bitboard {
     type Output = Self;
     fn shl(self, rhs: isize) -> Self::Output {
         if rhs > 0 {
-            return Self(self.0 << rhs);
+            Self(self.0 << rhs)
         } else {
-            return Self(self.0 >> -rhs);
+            Self(self.0 >> -rhs)
         }
     }
 }
@@ -140,9 +140,9 @@ impl Shr<isize> for Bitboard {
     type Output = Self;
     fn shr(self, rhs: isize) -> Self::Output {
         if rhs > 0 {
-            return Self(self.0 >> rhs);
+            Self(self.0 >> rhs)
         } else {
-            return Self(self.0 << -rhs);
+            Self(self.0 << -rhs)
         }
     }
 }
@@ -165,22 +165,22 @@ impl Display for Bitboard {
                 let idx = board::try_index(file, rank).expect("invalid file + rank for index! todo");
                 let k = 1 << idx;
 
-                if &self.0 & k != 0 {
+                if self.0 & k != 0 {
                     write!(s, "{}", 1)?;
                 } else {
                     write!(s, ".")?;
                 }
             }
-            write!(s, "\n")?;
+            writeln!(s)?;
         }
-        return write!(f, "{}", s);
+        write!(f, "{}", s)
     }
 }
 
 impl Bitboard {
     /// Creates a new bitboard from the provided [`u64`].
     pub fn new(data: u64) -> Bitboard {
-        Bitboard { 0: data }
+        Bitboard(data)
     }
 
     pub fn new_from_square_ref(sq: &Square) -> Bitboard {
@@ -190,7 +190,7 @@ impl Bitboard {
 
     /// Returns the boolean representation of this bitboard.
     pub fn bool(&self) -> bool {
-        return self.0 != 0;
+        self.0 != 0
     }
 
     /// Generic fill algorithms that use Dumb7 fill
@@ -205,7 +205,7 @@ impl Bitboard {
             flood |= flood.fill_one(dir);
         }
 
-        return flood;
+        flood
     }
 
     pub fn fill_one(&self, dir: &impl Direction) -> Bitboard {
@@ -214,7 +214,7 @@ impl Bitboard {
         let mask = dir.get_wraparound_mask();
         result |= (result << shift) & mask;
         
-        return result;
+        result
     }
 
     // Utility functions to compute information about bitboards
@@ -227,9 +227,9 @@ impl Bitboard {
         let mut x: u64 = self.0;
         x = ((x >> 8) & k1) | ((x & k1) << 8);
         x = ((x >> 16) & k2) | ((x & k2) << 16);
-        x = (x >> 32) | (x << 32);
+        x = x.rotate_left(32);
 
-        return Bitboard(x);
+        Bitboard(x)
     }
 
     /// Compute the number of set bits in the bitboard.
@@ -243,7 +243,7 @@ impl Bitboard {
             pc += 1;
             val &= val - 1;
         }
-        return pc;
+        pc
     }
 
     /// Returns the index of the LS1B (least significant 1 bit)
@@ -259,8 +259,8 @@ impl Bitboard {
 
         // Need the wrapped version of the function because the algorithm
         // relies on overflow behavior which is disallowed by default.
-        let key: u64 = u64::wrapping_mul(val ^ val - 1, DEBRUIJN_MAGIC_VAL) >> 58;
-        return DEBRUIJN_LOOKUP[key as usize];
+        let key: u64 = u64::wrapping_mul(val ^ (val - 1), DEBRUIJN_MAGIC_VAL) >> 58;
+        DEBRUIJN_LOOKUP[key as usize]
     }
 
     /// Returns the index of the MS1B (most significant 1 bit)
@@ -281,7 +281,7 @@ impl Bitboard {
         val |= val >> 16;
         val |= val >> 32;
         let key: u64 = u64::wrapping_mul(val, DEBRUIJN_MAGIC_VAL) >> 58;
-        return DEBRUIJN_LOOKUP[key as usize];
+        DEBRUIJN_LOOKUP[key as usize]
     }
 
     /// Convert the set-centric bitboard representation to
@@ -294,7 +294,7 @@ impl Bitboard {
             bb.0 &= bb.0 - 1;
         }
 
-        return indices;
+        indices
     }
 }
 

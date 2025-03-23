@@ -1,3 +1,4 @@
+#![allow(clippy::upper_case_acronyms)]
 use std::{fmt::Debug, ops::AddAssign};
 
 use num_derive::{FromPrimitive, ToPrimitive};

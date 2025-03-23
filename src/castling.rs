@@ -90,7 +90,7 @@ impl Display for CastlingRights {
             s += "q";
         }
 
-        return write!(f, "{}", s);
+        write!(f, "{}", s)
     }
 }
 
@@ -105,12 +105,12 @@ impl Default for CastlingRights {
 impl CastlingRights {
     /// Returns true if the provided color can castle kingsides.
     pub fn kingside(&self, c: Color) -> bool {
-        return (self.data & KINGSIDES[c]) != 0;
+        (self.data & KINGSIDES[c]) != 0
     }
 
     /// Returns true if the provided color can castle queensides.
     pub fn queenside(&self, c: Color) -> bool {
-        return (self.data & QUEENSIDES[c]) != 0;
+        (self.data & QUEENSIDES[c]) != 0
     }
 }
 

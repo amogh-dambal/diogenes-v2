@@ -33,16 +33,16 @@ pub struct PieceSet([Bitboard; 14]);
 
 impl Debug for PieceSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "white pieces:\n");
+        writeln!(f, "white pieces:");
         write!(f, "{}", self.0[0]);
-        write!(f, "black pieces:\n");
+        writeln!(f, "black pieces:");
         write!(f, "{}", self.0[1]);
         for piece in Piece::iter() {
-            write!(f, "{piece:?}:\n");
+            writeln!(f, "{piece:?}:");
             write!(f, "{}", self[piece]);
         }
 
-        write!(f, "\n")
+        writeln!(f)
     }
 }
 
@@ -71,7 +71,7 @@ impl FromStr for PieceSet {
     /// Parses a [`PieceSet`] from a FEN (Forsyth-Edwards Notation) input string.
     fn from_str(fen: &str) -> DiogenesResult<Self> {
         let mut val = Self([Bitboard::default(); 14]);
-        fen.rsplit("/").zip(Rank::iter()).map(|(pieces, rank)| {
+        fen.rsplit("/").zip(Rank::iter()).try_for_each(|(pieces, rank)| {
             let mut f: u32 = 0;
             for ch in pieces.chars() {
                 match ch.to_digit(10) {
@@ -102,8 +102,7 @@ impl FromStr for PieceSet {
                 }
             }
             Ok::<(), DiogenesError>(())
-        })
-        .collect::<DiogenesResult<()>>()?;
+        })?;
 
         Ok(val)
     }
@@ -226,10 +225,10 @@ impl Debug for Position {
                 };
                 write!(s, "{} ", ch);
             }
-            write!(s, "\n").unwrap();
+            writeln!(s).unwrap();
         }
 
-        return write!(f, "{}", s);
+        write!(f, "{}", s)
     }
 }
 
@@ -310,7 +309,7 @@ impl Position {
                 pieces.push_str(empty.to_string().as_str());
             }
 
-            pieces.push_str("/");
+            pieces.push('/');
         }
         // Remove the trailing slash from the constructed string
         pieces.pop();
@@ -327,7 +326,7 @@ impl Position {
         let ply: String = self.ply.to_string();
         let fullmove = self.fullmove.to_string();
 
-        return [pieces, active_color, cr, ep, ply, fullmove].join(" ");
+        [pieces, active_color, cr, ep, ply, fullmove].join(" ")
     }
 
     /// Deserialize a position from a FEN string.

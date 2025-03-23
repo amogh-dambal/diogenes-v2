@@ -43,25 +43,25 @@ impl Attacks {
             a.black_pawn[sq] |= bb.fill_one(&RayDirection::SW);
         }
         
-        return a;
+        a
     }
 
     pub fn king(&self, sq: &Square, danger_squares: Bitboard) -> Bitboard {
         let sq_idx = sq.to_usize().expect("Invalid square");
-        return self.king[sq_idx] & !danger_squares;
+        self.king[sq_idx] & !danger_squares
     }
 
     pub fn knight(&self, sq: Square, blockers: Bitboard) -> Bitboard {
         let sq_idx = sq.to_usize().expect("Invalid bitboard");
-        return self.knight[sq_idx] & !blockers;
+        self.knight[sq_idx] & !blockers
     }
 
     pub fn bishop(&self, sq: Square, blockers: Bitboard) -> Bitboard {
-        return self.sliding_piece_attacks(sq, blockers, &BISHOP_DIRS);
+        self.sliding_piece_attacks(sq, blockers, &BISHOP_DIRS)
     }
 
     pub fn rook(&self, sq: Square, blockers: Bitboard) -> Bitboard {
-        return self.sliding_piece_attacks(sq, blockers, &ROOK_DIRS);
+        self.sliding_piece_attacks(sq, blockers, &ROOK_DIRS)
     }
 
     fn sliding_piece_attacks(&self, sq: Square, blockers: Bitboard, dirs: &[RayDirection; 4]) -> Bitboard {
@@ -69,22 +69,21 @@ impl Attacks {
         for (dir_idx, dir) in dirs.iter().enumerate() {
             let ray = self.rays[dir_idx][sq.to_usize().expect("Invalid square!")];
 
-            let pos: i32;
-            match dir {
+            let pos: i32 = match dir {
                 &RayDirection::E | &RayDirection::N | &RayDirection::NE | &RayDirection::NW => {
-                    pos = (ray & blockers).bitscan_reverse();    
+                    (ray & blockers).bitscan_reverse()
                 },
                 &RayDirection::W | &RayDirection::S | &RayDirection::SE | &RayDirection::SW => {
-                    pos = (ray & blockers).bitscan_forward(); 
+                    (ray & blockers).bitscan_forward()
                 }
-            }
+            };
             
             let block = Square::from_i32(pos).expect("Invalid square!");
             let unreachable = self.rays[dir_idx][block.to_usize().expect("Invalid square!")];
 
             attacks |= ray & !unreachable;
         }
-        return attacks;
+        attacks
     }
 }
 

@@ -1,6 +1,5 @@
 use crate::square::Square;
 
-use num_traits;
 
 /// A bitfield encoding representing a single move
 /// TODO: Use `zerocopy` or some bitfield equivalent
@@ -31,26 +30,26 @@ const QUEEN_PROMO: u32 = 0b1011;
 impl Move {
     pub fn from(&self) -> Square {
         let sq: Option<Square> = num_traits::FromPrimitive::from_u32(self.data & FROM_SQUARE);
-        return sq.expect("Invalid square!");
+        sq.expect("Invalid square!")
     }
 
     pub fn to(&self) -> Square {
         let sq: Option<Square> = num_traits::FromPrimitive::from_u32(self.data >> 6 & TO_SQUARE);
-        return sq.expect("Invalid square!");
+        sq.expect("Invalid square!")
     }
 
     pub fn is_capture(&self) -> bool {
         let flags: u32 = self.read_sp_flags();
-        return (flags & CAPTURE) != 0;
+        (flags & CAPTURE) != 0
     }
 
     pub fn is_promo(&self) -> bool {
         let flags: u32 = self.read_sp_flags();
-        return (flags & PROMO) != 0;
+        (flags & PROMO) != 0
     }
 
     fn read_sp_flags(&self) -> u32 {
-        return (self.data & SPECIAL_FLAGS) >> 12;
+        (self.data & SPECIAL_FLAGS) >> 12
     }
 
 }
