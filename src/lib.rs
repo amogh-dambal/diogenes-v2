@@ -5,7 +5,7 @@ mod board;
 mod color;
 mod castling;
 mod direction;
-mod fen;
+mod error;
 mod r#move;
 mod piece;
 mod position;
