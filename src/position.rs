@@ -13,12 +13,12 @@ use crate::bitboard::Bitboard;
 use crate::board;
 use crate::board::{File, Rank};
 use crate::castling::CastlingRights;
+use crate::color::Color;
 use crate::error::DiogenesError;
 use crate::error::DiogenesResult;
 use crate::r#move::Move;
-use crate::square::Square;
-use crate::color::Color;
 use crate::piece::Piece;
+use crate::square::Square;
 
 const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -44,16 +44,16 @@ impl Debug for PieceSet {
 
 impl PieceSet {
     /// Returns a bitboard corresponding to the empty squares.
-    /// 
-    /// Equivalent to an XOR of [Self::occupied()] and the 
+    ///
+    /// Equivalent to an XOR of [Self::occupied()] and the
     /// universal bitboard.
     pub fn empty(&self) -> Bitboard {
         Bitboard::new(u64::MAX) ^ self.occupied()
     }
 
     /// Returns a bitboard corresponding to the occupied squares.
-    /// 
-    /// This is the equivalent of an XOR of [Self::empty()] and 
+    ///
+    /// This is the equivalent of an XOR of [Self::empty()] and
     /// the universal bitboard.
     pub fn occupied(&self) -> Bitboard {
         self[Color::White] | self[Color::Black]
@@ -67,38 +67,40 @@ impl FromStr for PieceSet {
     /// Parses a [`PieceSet`] from a FEN (Forsyth-Edwards Notation) input string.
     fn from_str(fen: &str) -> DiogenesResult<Self> {
         let mut val = Self([Bitboard::default(); 14]);
-        fen.rsplit("/").zip(Rank::iter()).try_for_each(|(pieces, rank)| {
-            let mut f: u32 = 0;
-            for ch in pieces.chars() {
-                match ch.to_digit(10) {
-                    Some(skip) => {
-                        if skip != 8 {
-                            f += skip;
+        fen.rsplit("/")
+            .zip(Rank::iter())
+            .try_for_each(|(pieces, rank)| {
+                let mut f: u32 = 0;
+                for ch in pieces.chars() {
+                    match ch.to_digit(10) {
+                        Some(skip) => {
+                            if skip != 8 {
+                                f += skip;
+                            }
                         }
-                    }
-                    None => {
-                        let file = File::from_u32(f)
-                            .ok_or(DiogenesError::InvalidFenError{
+                        None => {
+                            let file = File::from_u32(f).ok_or(DiogenesError::InvalidFenError {
                                 fen: fen.to_string(),
                                 reason: format!("invalid file: {f:?}"),
                             })?;
-                        let color = match ch.is_ascii_uppercase() {
-                            true => Color::White,
-                            false => Color::Black,
-                        };
-                        let piece = Piece::try_from(ch)?;
-                        let sq_idx: usize = board::try_index(file, rank).expect("invalid file + rank index");
+                            let color = match ch.is_ascii_uppercase() {
+                                true => Color::White,
+                                false => Color::Black,
+                            };
+                            let piece = Piece::try_from(ch)?;
+                            let sq_idx: usize =
+                                board::try_index(file, rank).expect("invalid file + rank index");
 
-                        let bb: u64 = 1 << sq_idx;
-                        
-                        val[piece] |= bb;
-                        val[color] |= bb;
-                        f += 1;
+                            let bb: u64 = 1 << sq_idx;
+
+                            val[piece] |= bb;
+                            val[color] |= bb;
+                            f += 1;
+                        }
                     }
                 }
-            }
-            Ok::<(), DiogenesError>(())
-        })?;
+                Ok::<(), DiogenesError>(())
+            })?;
 
         Ok(val)
     }
@@ -106,7 +108,7 @@ impl FromStr for PieceSet {
 
 impl Index<Piece> for PieceSet {
     type Output = Bitboard;
-    
+
     fn index(&self, piece: Piece) -> &Self::Output {
         match piece {
             Piece::WPawn => &self.0[2],
@@ -172,14 +174,14 @@ pub struct Position {
     pieces: PieceSet,
 
     /// All currently empty squares.
-    /// TODO: evaluate the tradeoff between [`PieceSet::empty`] and 
+    /// TODO: evaluate the tradeoff between [`PieceSet::empty`] and
     /// keeping a separate value in [`Position`] that requires additional updates.
     empty: Bitboard,
 
     /// All currently occupied squares.
     /// TODO: see tradeoff above.
     occupied: Bitboard,
-    
+
     /// The current number of full, completed moves.
     fullmove: i32,
 
@@ -195,11 +197,11 @@ pub struct Position {
     /// The current open square to which a pawn can move via a capture
     /// en-passant. If there is no such square open in the current state
     /// this should be [`None`].
-    /// 
+    ///
     /// This will usually be [`None`].
     ep: Option<Square>,
 
-    /// A bitfield representation of each side's ability to castle in 
+    /// A bitfield representation of each side's ability to castle in
     /// either direction.
     castling_rights: CastlingRights,
 
@@ -244,9 +246,9 @@ impl FromStr for Position {
 }
 
 impl Default for Position {
-    /// Returns a [`Position`] representing the starting position of a 
+    /// Returns a [`Position`] representing the starting position of a
     /// chess board for a standard game of chess.
-    /// 
+    ///
     /// Since [`STARTING_FEN`] is well-formed, [`Self::try_from_fen`]
     /// is guaranteed not to panic.
     fn default() -> Self {
@@ -265,19 +267,43 @@ impl Position {
         }
 
         if (self.pieces[Color::White] & mask).bool() {
-            (self.pieces[Piece::WPawn] & mask).bool().then_some(Piece::WPawn)
-                .or((self.pieces[Piece::WKnight] & mask).bool().then_some(Piece::WKnight))
-                .or((self.pieces[Piece::WBishop] & mask).bool().then_some(Piece::WBishop))
-                .or((self.pieces[Piece::WRook] & mask).bool().then_some(Piece::WRook))
-                .or((self.pieces[Piece::WQueen] & mask).bool().then_some(Piece::WQueen))
-                .or((self.pieces[Piece::WKing] & mask).bool().then_some(Piece::WKing))
+            (self.pieces[Piece::WPawn] & mask)
+                .bool()
+                .then_some(Piece::WPawn)
+                .or((self.pieces[Piece::WKnight] & mask)
+                    .bool()
+                    .then_some(Piece::WKnight))
+                .or((self.pieces[Piece::WBishop] & mask)
+                    .bool()
+                    .then_some(Piece::WBishop))
+                .or((self.pieces[Piece::WRook] & mask)
+                    .bool()
+                    .then_some(Piece::WRook))
+                .or((self.pieces[Piece::WQueen] & mask)
+                    .bool()
+                    .then_some(Piece::WQueen))
+                .or((self.pieces[Piece::WKing] & mask)
+                    .bool()
+                    .then_some(Piece::WKing))
         } else {
-            (self.pieces[Piece::BPawn] & mask).bool().then_some(Piece::BPawn)
-                .or((self.pieces[Piece::BKnight] & mask).bool().then_some(Piece::BKnight))
-                .or((self.pieces[Piece::BBishop] & mask).bool().then_some(Piece::BBishop))
-                .or((self.pieces[Piece::BRook] & mask).bool().then_some(Piece::BRook))
-                .or((self.pieces[Piece::BQueen] & mask).bool().then_some(Piece::BQueen))
-                .or((self.pieces[Piece::BKing] & mask).bool().then_some(Piece::BKing))
+            (self.pieces[Piece::BPawn] & mask)
+                .bool()
+                .then_some(Piece::BPawn)
+                .or((self.pieces[Piece::BKnight] & mask)
+                    .bool()
+                    .then_some(Piece::BKnight))
+                .or((self.pieces[Piece::BBishop] & mask)
+                    .bool()
+                    .then_some(Piece::BBishop))
+                .or((self.pieces[Piece::BRook] & mask)
+                    .bool()
+                    .then_some(Piece::BRook))
+                .or((self.pieces[Piece::BQueen] & mask)
+                    .bool()
+                    .then_some(Piece::BQueen))
+                .or((self.pieces[Piece::BKing] & mask)
+                    .bool()
+                    .then_some(Piece::BKing))
         }
     }
 
@@ -310,11 +336,14 @@ impl Position {
 
         let active_color: String;
         match self.side_to_move {
-            Color::White => {active_color = "w".to_string()}
-            Color::Black => {active_color = "b".to_string()}
+            Color::White => active_color = "w".to_string(),
+            Color::Black => active_color = "b".to_string(),
         }
 
-        let ep: String = self.ep.map(|sq| sq.to_string()).unwrap_or(String::from("-"));
+        let ep: String = self
+            .ep
+            .map(|sq| sq.to_string())
+            .unwrap_or(String::from("-"));
         let cr: String = self.castling_rights.to_string();
         let ply: String = self.ply.to_string();
         let fullmove = self.fullmove.to_string();
@@ -325,7 +354,7 @@ impl Position {
     /// Deserialize a position from a FEN string.
     fn try_from_fen(fen: &str) -> DiogenesResult<Position> {
         let fields: Vec<&str> = fen.split(" ").collect();
-        
+
         // Read pieces from the first component of the FEN
         let pieces = PieceSet::from_str(fields[0])?;
         let occupied = pieces.occupied();
@@ -341,7 +370,7 @@ impl Position {
         let ply: i32 = fields[4].parse::<i32>()?;
         let fullmove: i32 = fields[5].parse::<i32>()?;
 
-        Ok(Position{
+        Ok(Position {
             empty,
             occupied,
             ep: ep_square,
@@ -371,9 +400,17 @@ mod tests {
     #[test]
     fn test_get_piece() {
         let pos = Position::default();
-        assert_eq!(pos.piece(Square::A1), Some(Piece::WRook), "White rook should be at A1");
+        assert_eq!(
+            pos.piece(Square::A1),
+            Some(Piece::WRook),
+            "White rook should be at A1"
+        );
         assert_eq!(pos.piece(Square::B1), Some(Piece::WKnight));
-        assert_eq!(pos.piece(Square::H1), Some(Piece::WRook), "White rook should be at A1");
+        assert_eq!(
+            pos.piece(Square::H1),
+            Some(Piece::WRook),
+            "White rook should be at A1"
+        );
     }
 
     #[test]
@@ -381,7 +418,7 @@ mod tests {
         let res = Position::from_str(STARTING_FEN);
         assert!(res.is_ok());
         let pos = res.unwrap();
-        
+
         let s = pos.to_string();
         assert_eq!(s, STARTING_FEN);
     }
@@ -423,7 +460,10 @@ mod tests {
 
         assert!(actual.is_ok(), "expected OK but received {actual:?}");
         let actual = actual.unwrap();
-        assert_eq!(expected, actual, "expected {expected:?} but received {actual:?}");
+        assert_eq!(
+            expected, actual,
+            "expected {expected:?} but received {actual:?}"
+        );
     }
 
     #[rstest]
@@ -432,9 +472,7 @@ mod tests {
     #[case::three("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")]
     #[case::four("4k3/8/8/8/8/8/4P3/4K3 w - - 5 39")]
     #[case::five("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")]
-    fn test_build_position_from_random_fen(
-        #[case] fen: &str,
-    ) {
+    fn test_build_position_from_random_fen(#[case] fen: &str) {
         let pos = Position::from_str(fen);
         assert!(pos.is_ok());
         let pos = pos.unwrap();
@@ -442,5 +480,4 @@ mod tests {
         let s = pos.to_string();
         assert_eq!(s, fen.to_string());
     }
-
 }

@@ -22,13 +22,13 @@ impl Index<Color> for [u8; 2] {
 pub struct CastlingRights {
     /// An 8-bit integer which encodes information about which side can
     /// castle in which direction.
-    /// 
+    ///
     /// (Lowercase is Black, uppercase is White)
-    /// 
+    ///
     /// X X X X K Q k q
     /// ^             ^
     /// MSB (7)       LSB (0)
-    /// 
+    ///
     /// This encoding can be serialized from a component of a FEN string.
     data: u8,
 }
@@ -38,14 +38,17 @@ impl FromStr for CastlingRights {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() > 4 {
-            return Err(DiogenesError::InvalidFenError { 
+            return Err(DiogenesError::InvalidFenError {
                 fen: s.to_string(),
-                reason: format!("castling rights field has length {} which exceeds max value of 4", s.len()) 
+                reason: format!(
+                    "castling rights field has length {} which exceeds max value of 4",
+                    s.len()
+                ),
             });
         }
-        
+
         // TODO: Make this more robust to strings like Qqq
-        let mut cr: CastlingRights = CastlingRights{data: 0};
+        let mut cr: CastlingRights = CastlingRights { data: 0 };
         if s.eq("-") {
             return Ok(cr);
         }
@@ -62,7 +65,7 @@ impl FromStr for CastlingRights {
         if s.contains("q") {
             cr.data |= QUEENSIDES[Color::Black];
         }
-        
+
         Ok(cr)
     }
 }
@@ -96,9 +99,7 @@ impl Display for CastlingRights {
 
 impl Default for CastlingRights {
     fn default() -> Self {
-        CastlingRights{
-            data: 0b00001111
-        }
+        CastlingRights { data: 0b00001111 }
     }
 }
 
@@ -142,7 +143,7 @@ mod tests {
     ) {
         let cr = CastlingRights::from_str(input);
         assert!(cr.is_ok(), "expected OK, received Err {cr:?}");
-        
+
         let cr = cr.unwrap();
         assert_eq!(bk, cr.kingside(Color::Black));
         assert_eq!(bq, cr.queenside(Color::Black));

@@ -1,6 +1,5 @@
 use crate::square::Square;
 
-
 /// A bitfield encoding representing a single move
 /// TODO: Use `zerocopy` or some bitfield equivalent
 /// to encode this better.
@@ -51,5 +50,4 @@ impl Move {
     fn read_sp_flags(&self) -> u32 {
         (self.data & SPECIAL_FLAGS) >> 12
     }
-
 }

@@ -2,8 +2,8 @@
 mod attacks;
 mod bitboard;
 mod board;
-mod color;
 mod castling;
+mod color;
 mod direction;
 mod error;
 mod r#move;

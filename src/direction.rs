@@ -2,13 +2,12 @@
 
 use num_derive::{FromPrimitive, ToPrimitive};
 
-use crate::board::{ALL_SQUARES, NOT_AB_FILE, NOT_A_FILE, NOT_GH_FILE, NOT_H_FILE};
+use crate::board::{ALL_SQUARES, NOT_A_FILE, NOT_AB_FILE, NOT_GH_FILE, NOT_H_FILE};
 
 pub trait Direction {
     fn get_shift(&self) -> isize;
     fn get_wraparound_mask(&self) -> u64;
 }
-
 
 #[derive(strum::EnumIter, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum RayDirection {
@@ -38,12 +37,8 @@ impl Direction for RayDirection {
 
     fn get_wraparound_mask(&self) -> u64 {
         match self {
-            RayDirection::E | RayDirection::NE | RayDirection::SE => {
-                NOT_A_FILE
-            }
-            RayDirection::W | RayDirection::NW | RayDirection::SW => {
-                NOT_H_FILE
-            }
+            RayDirection::E | RayDirection::NE | RayDirection::SE => NOT_A_FILE,
+            RayDirection::W | RayDirection::NW | RayDirection::SW => NOT_H_FILE,
             _ => {
                 // Basically a no-op
                 ALL_SQUARES
@@ -88,5 +83,15 @@ impl Direction for KnightDirection {
     }
 }
 
-pub const BISHOP_DIRS: [RayDirection; 4] = [RayDirection::NE, RayDirection::NW, RayDirection::SE, RayDirection::SW];
-pub const ROOK_DIRS: [RayDirection; 4] = [RayDirection::N, RayDirection::S, RayDirection::E, RayDirection::W];
+pub const BISHOP_DIRS: [RayDirection; 4] = [
+    RayDirection::NE,
+    RayDirection::NW,
+    RayDirection::SE,
+    RayDirection::SW,
+];
+pub const ROOK_DIRS: [RayDirection; 4] = [
+    RayDirection::N,
+    RayDirection::S,
+    RayDirection::E,
+    RayDirection::W,
+];

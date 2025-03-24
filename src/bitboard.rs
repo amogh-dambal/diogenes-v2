@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::fmt::{Binary, Debug, Display, Write};
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
+    ShrAssign,
 };
 
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -17,14 +18,16 @@ const DEBRUIJN_LOOKUP: [i32; 64] = [
 ];
 const DEBRUIJN_MAGIC_VAL: u64 = 0x03f79d71b4cb0a89;
 
-#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, FromPrimitive, ToPrimitive)]
+#[derive(
+    Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, FromPrimitive, ToPrimitive,
+)]
 pub struct Bitboard(u64);
 
 impl Debug for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let set_bits: HashSet<usize> = HashSet::from_iter(self.serialize());
         for rank in (0..=7).rev() {
-            for file in 0..= 7 {
+            for file in 0..=7 {
                 let i = board::index(file as usize, rank as usize);
                 if set_bits.contains(&i) {
                     write!(f, "X ")?;
@@ -33,7 +36,6 @@ impl Debug for Bitboard {
                 }
             }
             writeln!(f)?;
-        
         }
         writeln!(f)
     }
@@ -160,7 +162,8 @@ impl Display for Bitboard {
         let mut s = String::new();
         for rank in Rank::iter().rev() {
             for file in File::iter() {
-                let idx = board::try_index(file, rank).expect("invalid file + rank for index! todo");
+                let idx =
+                    board::try_index(file, rank).expect("invalid file + rank for index! todo");
                 let k = 1 << idx;
 
                 if self.0 & k != 0 {
@@ -207,7 +210,7 @@ impl Bitboard {
         let shift = dir.get_shift();
         let mask = dir.get_wraparound_mask();
         result |= (result << shift) & mask;
-        
+
         result
     }
 
@@ -402,4 +405,3 @@ mod tests {
         assert_eq!(matching, sample_indices.len());
     }
 }
-

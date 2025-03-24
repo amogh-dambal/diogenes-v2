@@ -10,10 +10,7 @@ pub enum DiogenesError {
     #[error("{0:?} is not a valid Rank")]
     InvalidRankError(String),
     #[error("{fen:?} is not a valid FEN string: {reason:?}")]
-    InvalidFenError{
-        fen: String,
-        reason: String,
-    },
+    InvalidFenError { fen: String, reason: String },
     #[error("{0} is not a valid square")]
     InvalidSquareError(String),
     #[error("{0} is not a valid piece")]
@@ -24,7 +21,10 @@ pub enum DiogenesError {
 
 impl From<ParseIntError> for DiogenesError {
     fn from(err: ParseIntError) -> Self {
-        DiogenesError::InvalidFenError { fen: String::from(""), reason: err.to_string() }
+        DiogenesError::InvalidFenError {
+            fen: String::from(""),
+            reason: err.to_string(),
+        }
     }
 }
 

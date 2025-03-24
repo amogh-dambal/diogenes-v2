@@ -4,7 +4,9 @@ use num_derive::{FromPrimitive, ToPrimitive};
 
 use crate::{color::Color, error::DiogenesError};
 
-#[derive(Clone, Copy, Debug, PartialEq, strum::EnumIter, strum::EnumCount, FromPrimitive, ToPrimitive)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, strum::EnumIter, strum::EnumCount, FromPrimitive, ToPrimitive,
+)]
 pub enum Piece {
     WPawn,
     WKnight,
@@ -55,7 +57,7 @@ impl TryFrom<char> for Piece {
             'R' => Ok(Piece::WRook),
             'Q' => Ok(Piece::WQueen),
             'K' => Ok(Piece::WKing),
-            val => Err(DiogenesError::InvalidPieceError(val.to_string()))
+            val => Err(DiogenesError::InvalidPieceError(val.to_string())),
         }
     }
 }
@@ -76,7 +78,7 @@ impl FromStr for Piece {
             "R" => Ok(Piece::WRook),
             "Q" => Ok(Piece::WQueen),
             "K" => Ok(Piece::WKing),
-            val => Err(DiogenesError::InvalidPieceError(val.into()))
+            val => Err(DiogenesError::InvalidPieceError(val.into())),
         }
     }
 }
@@ -103,18 +105,18 @@ impl Display for Piece {
 impl Piece {
     pub fn color(&self) -> Color {
         match self {
-            Self::WPawn | 
-            Self::WKnight | 
-            Self::WBishop | 
-            Self::WRook | 
-            Self::WQueen | 
-            Self::WKing => Color::White,
-            Self::BPawn | 
-            Self::BKnight | 
-            Self::BBishop | 
-            Self::BRook | 
-            Self::BQueen | 
-            Self::BKing => Color::Black,
+            Self::WPawn
+            | Self::WKnight
+            | Self::WBishop
+            | Self::WRook
+            | Self::WQueen
+            | Self::WKing => Color::White,
+            Self::BPawn
+            | Self::BKnight
+            | Self::BBishop
+            | Self::BRook
+            | Self::BQueen
+            | Self::BKing => Color::Black,
         }
     }
 }
@@ -126,13 +128,20 @@ mod tests {
     use super::Piece;
     #[test]
     fn test_str() {
-        let piece_strs: [&str; 12] = [
-            "P", "N", "B", "R", "Q", "K",
-            "p", "n", "b", "r", "q", "k",
-        ];
+        let piece_strs: [&str; 12] = ["P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k"];
         let pieces: [Piece; 12] = [
-            Piece::WPawn, Piece::WKnight, Piece::WBishop, Piece::WRook, Piece::WQueen, Piece::WKing,
-            Piece::BPawn, Piece::BKnight, Piece::BBishop, Piece::BRook, Piece::BQueen, Piece::BKing,
+            Piece::WPawn,
+            Piece::WKnight,
+            Piece::WBishop,
+            Piece::WRook,
+            Piece::WQueen,
+            Piece::WKing,
+            Piece::BPawn,
+            Piece::BKnight,
+            Piece::BBishop,
+            Piece::BRook,
+            Piece::BQueen,
+            Piece::BKing,
         ];
 
         for (s, p) in piece_strs.iter().zip(pieces) {
