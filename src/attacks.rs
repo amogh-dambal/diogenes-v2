@@ -1,59 +1,100 @@
+use std::ops::{Index, IndexMut};
+
 use num_traits::{FromPrimitive, ToPrimitive};
 use strum::IntoEnumIterator;
 
 use crate::bitboard::Bitboard;
-use crate::direction::{KnightDirection, RayDirection, BISHOP_DIRS, ROOK_DIRS};
+use crate::direction::{BISHOP_DIRS, KnightDirection, ROOK_DIRS, RayDirection};
 use crate::square::Square;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AttackSet([Bitboard; 64]);
+
+impl Default for AttackSet {
+    fn default() -> Self {
+        Self([Bitboard::default(); 64])
+    }
+}
+
+impl Index<&Square> for AttackSet {
+    type Output = Bitboard;
+
+    fn index(&self, sq: &Square) -> &Self::Output {
+        let idx = sq.to_usize().unwrap();
+        &self.0[idx]
+    }
+}
+
+impl IndexMut<&Square> for AttackSet {
+    fn index_mut(&mut self, sq: &Square) -> &mut Self::Output {
+        let idx = sq.to_usize().unwrap();
+        &mut self.0[idx]
+    }
+}
+
+impl Index<Square> for AttackSet {
+    type Output = Bitboard;
+
+    fn index(&self, sq: Square) -> &Self::Output {
+        let idx = sq.to_usize().unwrap();
+        &self.0[idx]
+    }
+}
+
+impl IndexMut<Square> for AttackSet {
+    fn index_mut(&mut self, sq: Square) -> &mut Self::Output {
+        let idx = sq.to_usize().unwrap();
+        &mut self.0[idx]
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Attacks {
-    white_pawn: [Bitboard; 64],
-    black_pawn: [Bitboard; 64],
-    king: [Bitboard; 64],
-    knight: [Bitboard; 64],
-    rays: [[Bitboard; 64]; 8],
+    white_pawn: AttackSet,
+    black_pawn: AttackSet,
+    king: AttackSet,
+    knight: AttackSet,
+    rays: [AttackSet; 8],
 }
 
 impl Attacks {
-    pub fn new() -> Attacks {
-        let mut a = Attacks {
-            white_pawn: [Bitboard::default(); 64],
-            black_pawn: [Bitboard::default(); 64],
-            king: [Bitboard::default(); 64],
-            knight: [Bitboard::default(); 64],
-            rays: [[Bitboard::default(); 64]; 8],
+    pub fn new() -> Self {
+        let mut attacks = Attacks {
+            white_pawn: AttackSet::default(),
+            black_pawn: AttackSet::default(),
+            king: AttackSet::default(),
+            knight: AttackSet::default(),
+            rays: [AttackSet::default(); 8],
         };
-        
-        for (sq, _) in Square::iter().take(63).enumerate() {
-            let bb = Bitboard::new(1 << sq);
-            
+
+        for sq in Square::iter().take(63) {
+            let bb = sq.bitboard();
+
             for (dir_idx, dir) in RayDirection::iter().enumerate() {
-                a.rays[dir_idx][sq] = bb.fill_all(&dir) & !bb;
-                a.king[sq] |= bb.fill_one(&dir) & !bb;
+                attacks.rays[dir_idx][sq] = bb.fill_all(&dir) & !bb;
+                attacks.king[sq] |= bb.fill_one(&dir) & !bb;
             }
-            
+
             for kdir in KnightDirection::iter() {
-                a.knight[sq] = bb.fill_all(&kdir) & !bb;
+                attacks.knight[sq] = bb.fill_all(&kdir) & !bb;
             }
 
-            a.white_pawn[sq] |= bb.fill_one(&RayDirection::NE);
-            a.white_pawn[sq] |= bb.fill_one(&RayDirection::NW);
+            attacks.white_pawn[sq] |= bb.fill_one(&RayDirection::NE);
+            attacks.white_pawn[sq] |= bb.fill_one(&RayDirection::NW);
 
-            a.black_pawn[sq] |= bb.fill_one(&RayDirection::SE);
-            a.black_pawn[sq] |= bb.fill_one(&RayDirection::SW);
+            attacks.black_pawn[sq] |= bb.fill_one(&RayDirection::SE);
+            attacks.black_pawn[sq] |= bb.fill_one(&RayDirection::SW);
         }
-        
-        a
+
+        attacks
     }
 
-    pub fn king(&self, sq: &Square, danger_squares: Bitboard) -> Bitboard {
-        let sq_idx = sq.to_usize().expect("Invalid square");
-        self.king[sq_idx] & !danger_squares
+    pub fn king(&self, sq: Square, danger_squares: Bitboard) -> Bitboard {
+        self.king[sq] & !danger_squares
     }
 
     pub fn knight(&self, sq: Square, blockers: Bitboard) -> Bitboard {
-        let sq_idx = sq.to_usize().expect("Invalid bitboard");
-        self.knight[sq_idx] & !blockers
+        self.knight[sq] & !blockers
     }
 
     pub fn bishop(&self, sq: Square, blockers: Bitboard) -> Bitboard {
@@ -64,22 +105,27 @@ impl Attacks {
         self.sliding_piece_attacks(sq, blockers, &ROOK_DIRS)
     }
 
-    fn sliding_piece_attacks(&self, sq: Square, blockers: Bitboard, dirs: &[RayDirection; 4]) -> Bitboard {
+    fn sliding_piece_attacks(
+        &self,
+        sq: Square,
+        blockers: Bitboard,
+        dirs: &[RayDirection; 4],
+    ) -> Bitboard {
         let mut attacks = Bitboard::default();
         for (dir_idx, dir) in dirs.iter().enumerate() {
-            let ray = self.rays[dir_idx][sq.to_usize().expect("Invalid square!")];
+            let ray = self.rays[dir_idx][sq];
 
             let pos: i32 = match dir {
                 &RayDirection::E | &RayDirection::N | &RayDirection::NE | &RayDirection::NW => {
                     (ray & blockers).bitscan_reverse()
-                },
+                }
                 &RayDirection::W | &RayDirection::S | &RayDirection::SE | &RayDirection::SW => {
                     (ray & blockers).bitscan_forward()
                 }
             };
-            
+
             let block = Square::from_i32(pos).expect("Invalid square!");
-            let unreachable = self.rays[dir_idx][block.to_usize().expect("Invalid square!")];
+            let unreachable = self.rays[dir_idx][block];
 
             attacks |= ray & !unreachable;
         }
@@ -105,27 +151,18 @@ mod tests {
     }
 
     #[test]
-    fn test_knight() {
-
-    }
+    fn test_knight() {}
 
     #[test]
-    fn test_pawn() {
-
-    }
+    fn test_pawn() {}
 
     #[test]
-    fn test_bishop() {
-
-    }
+    fn test_bishop() {}
 
     #[test]
-    fn test_rook() {
-
-    }
+    fn test_rook() {}
 
     #[test]
-    fn test_queen() {
-        
-    }
+    fn test_queen() {}
 }
+
