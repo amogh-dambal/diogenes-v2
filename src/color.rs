@@ -1,6 +1,3 @@
-use num_derive::FromPrimitive;
-use num_derive::ToPrimitive;
-
 use crate::error::DiogenesError;
 
 #[derive(
@@ -9,8 +6,6 @@ use crate::error::DiogenesError;
     Debug,
     PartialEq,
     Eq,
-    FromPrimitive,
-    ToPrimitive,
     strum::AsRefStr,
     strum::Display,
     strum::EnumCount,

@@ -58,6 +58,10 @@ pub struct Attacks {
 }
 
 impl Attacks {
+    /// Create a new eagerly-initialized [`Attacks`] which contains all attack sets
+    /// for each piece on each square.
+    /// 
+    /// This precomputation enables O(1) attack set lookup during move generation.
     pub fn new() -> Self {
         let mut attacks = Attacks {
             white_pawn: AttackSet::default(),
@@ -89,20 +93,44 @@ impl Attacks {
         attacks
     }
 
+    /// TODO: Implement pawn attacks (have to take en-passant into play).
+    pub fn pawns(&self, _sq: Square, _blockers: Bitboard) -> Bitboard {
+        todo!("write logic to generate pawn attacks")
+    }
+
+    /// Returns a [`Bitboard`] representing all squares attacked by a king located
+    /// on `sq` given a set of "danger" squares (i.e squares to which a king could 
+    /// not move without moving into check, which is illegal).
     pub fn king(&self, sq: Square, danger_squares: Bitboard) -> Bitboard {
         self.king[sq] & !danger_squares
     }
 
+    /// Returns a [`Bitboard`] of all squares attacked by a knight on 
+    /// a square given "blockers" (i.e. other pieces which may already
+    /// exist on the board).
     pub fn knight(&self, sq: Square, blockers: Bitboard) -> Bitboard {
         self.knight[sq] & !blockers
     }
 
+    /// Returns a [`Bitboard`] of all squares attacked by a bishop on 
+    /// a square given "blockers" (i.e. other pieces which may already
+    /// exist on the board).
     pub fn bishop(&self, sq: Square, blockers: Bitboard) -> Bitboard {
         self.sliding_piece_attacks(sq, blockers, &BISHOP_DIRS)
     }
 
+    /// Returns a [`Bitboard`] of all squares attacked by a rook on 
+    /// a square given "blockers" (i.e. other pieces which may already
+    /// exist on the board).
     pub fn rook(&self, sq: Square, blockers: Bitboard) -> Bitboard {
         self.sliding_piece_attacks(sq, blockers, &ROOK_DIRS)
+    }
+
+    /// Returns a [`Bitboard`] of all squares attacked by a queen on 
+    /// a square given "blockers" (i.e. other pieces which may already
+    /// exist on the board).
+    pub fn queen(&self, sq: Square, blockers: Bitboard) -> Bitboard {
+        self.rook(sq, blockers) | self.bishop(sq, blockers)
     }
 
     fn sliding_piece_attacks(
