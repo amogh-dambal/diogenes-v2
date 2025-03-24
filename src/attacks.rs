@@ -151,8 +151,8 @@ mod tests {
 
     #[rstest]
     #[case::king_no_danger(Square::E1, Bitboard::default(), Bitboard::new(0b0011100000101000))]
-    // #[case::king_all_danger(Square::E8, Bitboard::default(), Bitboard::default())]
-    // #[case::king_mixed_danger_1()]
+    #[case::king_all_danger(Square::E8, Bitboard::default(), Bitboard::new(0b0011100000101000).flip_vertical())]
+    #[case::king_mixed(Square::G1, Bitboard::new(0b1110000000000000), Bitboard::new(0b10100000))]
     fn test_king(
         #[case] square: Square,
         #[case] danger: Bitboard,
@@ -160,7 +160,7 @@ mod tests {
     ) {
         let at = Attacks::new();
         let actual = at.king(square, danger);
-        assert_eq!(expected, actual, "expected {expected:?} but got {actual:?}");
+        assert_eq!(expected, actual, "expected\n{expected:?} but got\n{actual:?}");
     }
 
     #[test]
