@@ -181,11 +181,6 @@ impl Bitboard {
         Bitboard(data)
     }
 
-    pub fn new_from_square_ref(sq: &Square) -> Bitboard {
-        let shift = sq.to_u64().unwrap();
-        Self(1 << shift)
-    }
-
     /// Returns the boolean representation of this bitboard.
     pub fn bool(&self) -> bool {
         self.0 != 0
@@ -206,6 +201,7 @@ impl Bitboard {
         flood
     }
 
+    /// Generic fill algorithm which fills a bitboard in a given direction.
     pub fn fill_one(&self, dir: &impl Direction) -> Bitboard {
         let mut result = Bitboard(self.0);
         let shift = dir.get_shift();

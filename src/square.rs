@@ -39,13 +39,6 @@ pub enum Square {
     A8, B8, C8, D8, E8, F8, G8, H8,
 }
 
-impl From<Square> for Bitboard {
-    fn from(sq: Square) -> Self {
-        let i = sq.to_u64().unwrap();
-        Self::new(1 << i)
-    }
-}
-
 impl Square {
     /// Get the file of the given square from [`File::A`] to [`File::H`]
     pub fn file(&self) -> File {
@@ -73,6 +66,23 @@ impl Square {
             Self::A7 | Self::B7 | Self::C7 | Self::D7 | Self::E7 | Self::F7 | Self::G7 | Self::H7 => Rank::SEVEN,
             Self::A8 | Self::B8 | Self::C8 | Self::D8 | Self::E8 | Self::F8 | Self::G8 | Self::H8 => Rank::EIGHT,
         }
+    }
+
+    /// Convert the square to its [`Bitboard`] representation, consuming
+    /// `self`.
+    /// 
+    /// This bitboard will have one bit set at a bit index corresponding
+    /// to the square.
+    pub fn to_bitboard(self) -> Bitboard {
+        Bitboard::new(1 << self.to_u64().unwrap())
+    }
+
+    /// Creates a new [`Bitboard`] from a given square.
+    /// 
+    /// This bitboard will have one bit set at a bit index corresponding
+    /// to the square.
+    pub fn bitboard(&self) -> Bitboard {
+        Bitboard::new(1 << self.to_u64().unwrap())
     }
 }
 
@@ -112,7 +122,9 @@ mod tests {
     fn test_square_to_bitboard() {
         for (i, sq) in Square::iter().enumerate() {
             let expected = Bitboard::new(1 << i);
-            let actual: Bitboard = sq.into();
+            let actual: Bitboard = sq.bitboard();
+
+            assert_eq!(expected, actual);
         }
     }
 

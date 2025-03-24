@@ -258,7 +258,7 @@ impl Position {
     /// Retrieves the [`crate::piece::Piece`] at the specific index.
     /// Returns [`None`] if the square is empty.
     pub fn piece<S: Into<Square>>(&self, square: S) -> Option<Piece> {
-        let mask = Bitboard::new_from_square_ref(&square.into());
+        let mask = Into::<Square>::into(square).bitboard();
 
         if (self.empty & mask).bool() {
             return None;
