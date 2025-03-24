@@ -1,5 +1,5 @@
 #![allow(clippy::upper_case_acronyms)]
-use std::{fmt::Debug, ops::AddAssign};
+use std::fmt::Debug;
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -10,23 +10,14 @@ use crate::{error::{DiogenesError, DiogenesResult}, square::Square};
     Clone,
     Copy,
     Debug,
+    num_derive::FromPrimitive,
+    num_derive::ToPrimitive,
     strum::EnumIter,
     strum::Display,
     strum::EnumString,
-    FromPrimitive, 
-    ToPrimitive
 )]
 pub enum File {
     A, B, C, D, E, F, G, H
-}
-
-impl AddAssign<u32> for File {
-    fn add_assign(&mut self, rhs: u32) {
-        let val = self.to_u32().expect("Invalid add!") + rhs;
-        let file = File::from_u32(val).expect("Invalid file!");
-        
-        *self = file;
-    }
 }
 
 #[derive(Clone, Copy, Debug, strum::EnumIter, FromPrimitive, ToPrimitive)]
