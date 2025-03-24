@@ -136,6 +136,10 @@ impl Attacks {
 // TODO: Add unit tests for attack generations.
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
+    use crate::{bitboard::Bitboard, square::Square};
+
     use super::Attacks;
 
     #[test]
@@ -145,9 +149,18 @@ mod tests {
         assert_eq!(a1, a2);
     }
 
-    #[test]
-    fn test_king() {
+    #[rstest]
+    #[case::king_no_danger(Square::E1, Bitboard::default(), Bitboard::new(0b0011100000101000))]
+    // #[case::king_all_danger(Square::E8, Bitboard::default(), Bitboard::default())]
+    // #[case::king_mixed_danger_1()]
+    fn test_king(
+        #[case] square: Square,
+        #[case] danger: Bitboard,
+        #[case] expected: Bitboard,
+    ) {
         let at = Attacks::new();
+        let actual = at.king(square, danger);
+        assert_eq!(expected, actual, "expected {expected:?} but got {actual:?}");
     }
 
     #[test]
