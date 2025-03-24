@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::{Debug, Display}, num::ParseIntError};
+use std::{fmt::Debug, num::ParseIntError};
 
 use thiserror::Error;
 

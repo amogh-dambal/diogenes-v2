@@ -1,16 +1,14 @@
 use std::collections::HashSet;
 use std::fmt::{Binary, Debug, Display, Write};
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref, Not, Shl, ShlAssign, Shr, ShrAssign
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign
 };
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use num_traits::ToPrimitive;
 use strum::IntoEnumIterator;
 
 use crate::board::{self, File, Rank};
 use crate::direction::Direction;
-use crate::square::Square;
 
 const DEBRUIJN_LOOKUP: [i32; 64] = [
     0, 47, 1, 56, 48, 27, 2, 60, 57, 49, 41, 37, 28, 16, 3, 61, 54, 58, 35, 52, 50, 42, 21, 44, 38,
@@ -26,7 +24,7 @@ impl Debug for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let set_bits: HashSet<usize> = HashSet::from_iter(self.serialize());
         for rank in (0..=7).rev() {
-            for file in (0..= 7) {
+            for file in 0..= 7 {
                 let i = board::index(file as usize, rank as usize);
                 if set_bits.contains(&i) {
                     write!(f, "X ")?;

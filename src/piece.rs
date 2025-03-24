@@ -1,9 +1,8 @@
-use std::{fmt::Display, ops::Index, slice::SliceIndex, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use num_traits::ToPrimitive;
 
-use crate::{bitboard::{Bitboard}, color::Color, error::DiogenesError};
+use crate::{color::Color, error::DiogenesError};
 
 #[derive(Clone, Copy, Debug, PartialEq, strum::EnumIter, strum::EnumCount, FromPrimitive, ToPrimitive)]
 pub enum Piece {

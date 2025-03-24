@@ -48,7 +48,7 @@ where
 {
     let f: usize = file.into();
     let r: usize = rank.into();
-    ((8 * r) + f)
+    (8 * r) + f
 }
 
 pub fn try_square(file: File, rank: Rank) -> Option<Square>

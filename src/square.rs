@@ -1,4 +1,3 @@
-use core::fmt;
 use std::str::FromStr;
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;

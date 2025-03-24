@@ -4,14 +4,10 @@ use std::fmt::Display;
 use std::fmt::Write;
 use std::ops::Index;
 use std::ops::IndexMut;
-use std::slice::SliceIndex;
 use std::str::FromStr;
 
 use num_traits::FromPrimitive;
-use num_traits::ToPrimitive;
-use strum::EnumCount;
 use strum::IntoEnumIterator;
-use thiserror::Error;
 
 use crate::bitboard::Bitboard;
 use crate::board;
@@ -21,7 +17,7 @@ use crate::error::DiogenesError;
 use crate::error::DiogenesResult;
 use crate::r#move::Move;
 use crate::square::Square;
-use crate::color::{Color};
+use crate::color::Color;
 use crate::piece::Piece;
 
 const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -33,13 +29,13 @@ pub struct PieceSet([Bitboard; 14]);
 
 impl Debug for PieceSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "white pieces:");
-        write!(f, "{}", self.0[0]);
-        writeln!(f, "black pieces:");
-        write!(f, "{}", self.0[1]);
+        writeln!(f, "white pieces:")?;
+        write!(f, "{}", self.0[0])?;
+        writeln!(f, "black pieces:")?;
+        write!(f, "{}", self.0[1])?;
         for piece in Piece::iter() {
-            writeln!(f, "{piece:?}:");
-            write!(f, "{}", self[piece]);
+            writeln!(f, "{piece:?}:")?;
+            write!(f, "{}", self[piece])?;
         }
 
         writeln!(f)
@@ -218,12 +214,11 @@ impl Debug for Position {
         for rank in Rank::iter().rev() {
             for file in File::iter() {
                 let square = board::try_square(file, rank).unwrap();
-                let p = self.piece(square);
                 let ch = match self.piece(square) {
                     Some(p) => format!("{}", p),
                     None => String::from("."),
                 };
-                write!(s, "{} ", ch);
+                write!(s, "{} ", ch)?;
             }
             writeln!(s).unwrap();
         }
@@ -293,7 +288,6 @@ impl Position {
         for rank in Rank::iter().rev() {
             let mut empty = 0;
             for file in File::iter() {
-                let sq = board::try_square(file, rank).unwrap();
                 if let Some(piece) = self.piece(board::try_square(file, rank).unwrap()) {
                     if empty > 0 {
                         pieces.push_str(&empty.to_string());
@@ -318,7 +312,6 @@ impl Position {
         match self.side_to_move {
             Color::White => {active_color = "w".to_string()}
             Color::Black => {active_color = "b".to_string()}
-            _ => {panic!("Invalid position")}
         }
 
         let ep: String = self.ep.map(|sq| sq.to_string()).unwrap_or(String::from("-"));

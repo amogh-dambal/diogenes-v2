@@ -123,14 +123,6 @@ mod tests {
     use crate::castling::CastlingRights;
     use crate::color::Color;
 
-    struct Testcase {
-        input: &'static str,
-        black_kingside: bool,
-        black_queenside: bool,
-        white_kingside: bool,
-        white_queenside: bool,
-    }
-
     #[rstest]
     #[case::all("KQkq", true, true, true, true)]
     #[case::only_white_all_sides("KQ", true, true, false, false)]
