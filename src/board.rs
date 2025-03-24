@@ -25,8 +25,7 @@ pub enum Rank {
     ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT
 }
 
-pub fn try_index(file: File, rank: Rank) -> DiogenesResult<usize>
-{
+pub fn try_index(file: File, rank: Rank) -> DiogenesResult<usize> {
     let f: usize = file.to_usize().ok_or(DiogenesError::InvalidFileError(format!("{file:#?}")))?;
     let r: usize = rank.to_usize().ok_or(DiogenesError::InvalidRankError(format!("{file:#?}")))?;
 
@@ -42,8 +41,7 @@ where
     (8 * r) + f
 }
 
-pub fn try_square(file: File, rank: Rank) -> Option<Square>
-{
+pub fn try_square(file: File, rank: Rank) -> Option<Square> {
     Square::from_usize(try_index(file, rank).ok()?)
 }
 
