@@ -1,36 +1,33 @@
-use std::{fmt::Display, ops::Index, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
-use crate::{color::Color, error::DiogenesError};
+use bitfield_struct::bitfield;
 
-const KINGSIDES: [u8; 2] = [0b00001000, 0b00000010];
-const QUEENSIDES: [u8; 2] = [0b00000100, 0b00000001];
-
-impl Index<Color> for [u8; 2] {
-    type Output = u8;
-
-    fn index(&self, color: Color) -> &Self::Output {
-        match color {
-            Color::White => &self[0],
-            Color::Black => &self[1],
-        }
-    }
-}
+use crate::error::DiogenesError;
 
 /// A bitfield structure which encodes information about which side
 /// can castle in which direction.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[bitfield(u8)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CastlingRights {
-    /// An 8-bit integer which encodes information about which side can
-    /// castle in which direction.
-    ///
-    /// (Lowercase is Black, uppercase is White)
-    ///
-    /// X X X X K Q k q
-    /// ^             ^
-    /// MSB (7)       LSB (0)
-    ///
-    /// This encoding can be serialized from a component of a FEN string.
-    data: u8,
+    /// Set to true if Black can castle queenside
+    #[bits(default = true)]
+    black_queenside: bool,
+
+    /// Set to true if Black can castle kingside
+    #[bits(default = true)]
+    black_kingside: bool,
+
+    /// Set to true if White can castle queenside
+    #[bits(default = true)]
+    white_queenside: bool,
+
+    /// Set to true if White can castle kingside
+    #[bits(default = true)]
+    white_kingside: bool,
+
+    /// Unused padding bits
+    #[bits(4)]
+    __: usize,
 }
 
 impl FromStr for CastlingRights {
@@ -47,71 +44,54 @@ impl FromStr for CastlingRights {
             });
         }
 
-        // TODO: Make this more robust to strings like Qqq
-        let mut cr: CastlingRights = CastlingRights { data: 0 };
-        if s.eq("-") {
-            return Ok(cr);
-        }
+        match s {
+            "-" => Ok(Self::from_bits(0)),
+            data => {
+                let castling_rights =
+                    data.chars()
+                        .try_fold(CastlingRights::from_bits(0), |cr, ch| match ch {
+                            'K' => Ok(cr.with_white_kingside(true)),
+                            'Q' => Ok(cr.with_white_queenside(true)),
+                            'k' => Ok(cr.with_black_kingside(true)),
+                            'q' => Ok(cr.with_black_queenside(true)),
+                            ch => Err(DiogenesError::InvalidFenError {
+                                fen: s.to_string(),
+                                reason: format!(
+                                    "invalid char: {ch:?} in FEN string for castling rights"
+                                ),
+                            }),
+                        })?;
 
-        if s.contains("K") {
-            cr.data |= KINGSIDES[Color::White];
+                Ok(castling_rights)
+            }
         }
-        if s.contains("Q") {
-            cr.data |= QUEENSIDES[Color::White];
-        }
-        if s.contains("k") {
-            cr.data |= KINGSIDES[Color::Black];
-        }
-        if s.contains("q") {
-            cr.data |= QUEENSIDES[Color::Black];
-        }
-
-        Ok(cr)
     }
 }
 
 impl Display for CastlingRights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.data == 0 {
+        if self.0 == 0 {
             return write!(f, "-");
         }
 
         let mut s = String::new();
-        if self.kingside(Color::White) {
+        if self.white_kingside() {
             s += "K";
         }
 
-        if self.queenside(Color::White) {
+        if self.white_queenside() {
             s += "Q";
         }
 
-        if self.kingside(Color::Black) {
+        if self.black_kingside() {
             s += "k";
         }
 
-        if self.queenside(Color::Black) {
+        if self.black_queenside() {
             s += "q";
         }
 
         write!(f, "{}", s)
-    }
-}
-
-impl Default for CastlingRights {
-    fn default() -> Self {
-        CastlingRights { data: 0b00001111 }
-    }
-}
-
-impl CastlingRights {
-    /// Returns true if the provided color can castle kingsides.
-    pub fn kingside(&self, c: Color) -> bool {
-        (self.data & KINGSIDES[c]) != 0
-    }
-
-    /// Returns true if the provided color can castle queensides.
-    pub fn queenside(&self, c: Color) -> bool {
-        (self.data & QUEENSIDES[c]) != 0
     }
 }
 
@@ -122,7 +102,6 @@ mod tests {
     use rstest::rstest;
 
     use crate::castling::CastlingRights;
-    use crate::color::Color;
 
     #[rstest]
     #[case::all("KQkq", true, true, true, true)]
@@ -145,9 +124,9 @@ mod tests {
         assert!(cr.is_ok(), "expected OK, received Err {cr:?}");
 
         let cr = cr.unwrap();
-        assert_eq!(bk, cr.kingside(Color::Black));
-        assert_eq!(bq, cr.queenside(Color::Black));
-        assert_eq!(wk, cr.kingside(Color::White));
-        assert_eq!(wq, cr.queenside(Color::White))
+        assert_eq!(bk, cr.black_kingside());
+        assert_eq!(bq, cr.black_queenside());
+        assert_eq!(wk, cr.white_kingside());
+        assert_eq!(wq, cr.white_queenside())
     }
 }

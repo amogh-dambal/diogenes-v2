@@ -252,6 +252,27 @@ impl Square {
     pub fn bitboard(&self) -> Bitboard {
         Bitboard::new(1 << self.to_u64().unwrap())
     }
+
+    pub const fn into_bits(self) -> usize {
+        self as _
+    }
+
+    pub const fn from_bits(value: usize) -> Self {
+        match value {
+            0 => Self::A1,
+            1 => Self::A2,
+            2 => Self::A3,
+            3 => Self::A4,
+            4 => Self::A5,
+            5 => Self::A6,
+            6 => Self::A7,
+            7 => Self::A8,
+            _ => Self::B1,
+            // 0 => Self::A,
+            // 1 => Self::B,
+            // _ => Self::C,
+        }
+    }
 }
 
 impl FromStr for Square {

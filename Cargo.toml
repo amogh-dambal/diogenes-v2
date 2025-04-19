@@ -8,6 +8,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.97"
 arrayvec = "0.7"
+bitfield-struct = "0.10.1"
 num-derive = "0.4"
 num-traits = "0.2"
 rand = "0.8"

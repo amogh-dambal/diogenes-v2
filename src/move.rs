@@ -1,53 +1,93 @@
-use crate::square::Square;
+use bitfield_struct::bitfield;
+
+use crate::{piece::Piece, square::Square};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u8)]
+pub enum MoveType {
+    Quiet,
+    DoublePawnPush,
+    KingsideCastle,
+    QueensideCastle,
+    Capture,
+    EnPassant,
+    KnightPromotion,
+    BishopPromotion,
+    RookPromotion,
+    QueenPromotion,
+    KnightPromotionCapture,
+    BishopPromotionCapture,
+    RookPromotionCapture,
+    QueenPromotionCapture,
+}
+
+impl MoveType {
+    const fn from_bits(val: usize) -> Self {
+        match val {
+            0 => Self::Quiet,
+            1 => Self::DoublePawnPush,
+            2 => Self::KingsideCastle,
+            3 => Self::QueensideCastle,
+            4 => Self::Capture,
+            5 => Self::EnPassant,
+            8 => Self::KnightPromotion,
+            9 => Self::BishopPromotion,
+            10 => Self::RookPromotion,
+            11 => Self::QueenPromotion,
+            12 => Self::KnightPromotionCapture,
+            13 => Self::BishopPromotionCapture,
+            14 => Self::RookPromotionCapture,
+            15 => Self::QueenPromotionCapture,
+        }
+    }
+}
 
 /// A bitfield encoding representing a single move
 /// TODO: Use `zerocopy` or some bitfield equivalent
 /// to encode this better.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[bitfield(u32)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Move {
-    /// 00000000 0000 0000 0000 000000 000000
-    /// EMPTYBTS CAPC FRPC SPFG TO--SQ FROMSQ
-    data: u32,
+    #[bits(6)]
+    from_square: Square,
+
+    #[bits(6)]
+    to_square: Square,
+
+    #[bits(2, default = MoveType::Quiet)]
+    move_type: MoveType,
+
+    #[bits(4)]
+    from_piece: Piece,
+
+    #[bits(4)]
+    captured_piece: Option<Piece>,
+
+    #[bits(8)]
+    _unused: u8,
 }
 
-const FROM_SQUARE: u32 = 0b111111;
-const TO_SQUARE: u32 = FROM_SQUARE << 6;
-
-// Bitmasks for special flags
-const SPECIAL_FLAGS: u32 = 0b1111 << 12;
-const DOUBLE_PAWN_PUSH: u32 = 0b0001;
-const KING_CASTLE: u32 = 0b0010;
-const QUEEN_CASTLE: u32 = 0b0011;
-const CAPTURE: u32 = 0b0100;
-const PROMO: u32 = 0b1000;
-const EN_PASSANT: u32 = 0b0101;
-const KNIGHT_PROMO: u32 = 0b1000;
-const BISHOP_PROMO: u32 = 0b1001;
-const ROOK_PROMO: u32 = 0b1010;
-const QUEEN_PROMO: u32 = 0b1011;
-
 impl Move {
-    pub fn from(&self) -> Square {
-        let sq: Option<Square> = num_traits::FromPrimitive::from_u32(self.data & FROM_SQUARE);
-        sq.expect("Invalid square!")
+    /// Returns [`true`] if the move is a quiet move.
+    ///
+    /// See <TODO: LINK>
+    pub fn is_quiet(&self) -> bool {
+        matches!(self.move_type(), MoveType::Quiet)
     }
 
-    pub fn to(&self) -> Square {
-        let sq: Option<Square> = num_traits::FromPrimitive::from_u32(self.data >> 6 & TO_SQUARE);
-        sq.expect("Invalid square!")
-    }
-
+    /// Returns [`true`] if the move is a capture move.
     pub fn is_capture(&self) -> bool {
-        let flags: u32 = self.read_sp_flags();
-        (flags & CAPTURE) != 0
+        matches!(self.move_type(), MoveType::Capture)
     }
 
+    /// Returns [`true`] if the move is a promotion.
     pub fn is_promo(&self) -> bool {
-        let flags: u32 = self.read_sp_flags();
-        (flags & PROMO) != 0
-    }
-
-    fn read_sp_flags(&self) -> u32 {
-        (self.data & SPECIAL_FLAGS) >> 12
+        matches!(
+            self.move_type(),
+            MoveType::BishopPromotion
+                | MoveType::KnightPromotion
+                | MoveType::QueenPromotion
+                | MoveType::RookPromotion
+        )
     }
 }
