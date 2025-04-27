@@ -1,3 +1,4 @@
+#![warn(unused_crate_dependencies)]
 #![allow(dead_code)]
 mod attacks;
 mod bitboard;
