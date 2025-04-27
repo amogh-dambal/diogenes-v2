@@ -1,22 +1,8 @@
-use std::{fmt::Display, ops::Index, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 use bitbybit::bitfield;
 
-use crate::{color::Color, error::DiogenesError};
-
-const KINGSIDES: [u8; 2] = [0b00001000, 0b00000010];
-const QUEENSIDES: [u8; 2] = [0b00000100, 0b00000001];
-
-impl Index<Color> for [u8; 2] {
-    type Output = u8;
-
-    fn index(&self, color: Color) -> &Self::Output {
-        match color {
-            Color::White => &self[0],
-            Color::Black => &self[1],
-        }
-    }
-}
+use crate::error::DiogenesError;
 
 /// A structure which encodes information about which side
 /// can castle in which direction.
