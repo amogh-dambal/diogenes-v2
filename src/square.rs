@@ -27,7 +27,7 @@ use crate::error::DiogenesError;
     strum::EnumCount,
     strum::EnumIter,
 )]
-#[strum(serialize_all = "lowercase")]
+#[strum(serialize_all = "lowercase", use_phf)]
 pub enum Square {
     A1,
     B1,
