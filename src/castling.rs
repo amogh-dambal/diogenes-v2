@@ -81,22 +81,11 @@ impl Display for CastlingRights {
             return write!(f, "-");
         }
 
-        let mut s = String::new();
-        if self.white_kingside() {
-            s += "K";
-        }
-
-        if self.white_queenside() {
-            s += "Q";
-        }
-
-        if self.black_kingside() {
-            s += "k";
-        }
-
-        if self.black_queenside() {
-            s += "q";
-        }
+        let mut s = String::with_capacity(4);
+        s.push_str(self.white_kingside().then_some("K").unwrap_or(""));
+        s.push_str(self.white_queenside().then_some("Q").unwrap_or(""));
+        s.push_str(self.black_kingside().then_some("k").unwrap_or(""));
+        s.push_str(self.black_queenside().then_some("q").unwrap_or(""));
 
         write!(f, "{}", s)
     }
