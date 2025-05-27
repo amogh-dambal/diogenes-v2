@@ -12,6 +12,8 @@ use crate::error::DiogenesError;
 /// to translate indices in a 64-bit integer to
 /// a square on the chess board. In this mapping,
 /// LSB points to A1 and the MSB points to H8.
+/// 
+/// See <https://www.chessprogramming.org/Square_Mapping_Considerations#Little-Endian_Rank-File_Mapping>
 #[derive(
     Debug,
     Clone,
