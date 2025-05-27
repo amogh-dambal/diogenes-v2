@@ -4,7 +4,7 @@ use num_traits::{FromPrimitive, ToPrimitive};
 use strum::IntoEnumIterator;
 
 use crate::bitboard::Bitboard;
-use crate::direction::{BISHOP_DIRS, KnightDirection, ROOK_DIRS, RayDirection};
+use crate::direction::{Direction, KnightDirection, RayDirection};
 use crate::square::Square;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -74,7 +74,8 @@ impl Attacks {
         for sq in Square::iter().take(63) {
             let bb = sq.bitboard();
 
-            for (dir_idx, dir) in RayDirection::iter().enumerate() {
+            for (dir_idx, ray_dir) in RayDirection::iter().enumerate() {
+                let dir = Direction::Ray(ray_dir);
                 attacks.rays[dir_idx][sq] = bb.fill_all(&dir) & !bb;
                 attacks.king[sq] |= bb.fill_one(&dir) & !bb;
             }
@@ -83,11 +84,11 @@ impl Attacks {
                 attacks.knight[sq] = bb.fill_all(&kdir) & !bb;
             }
 
-            attacks.white_pawn[sq] |= bb.fill_one(&RayDirection::NE);
-            attacks.white_pawn[sq] |= bb.fill_one(&RayDirection::NW);
+            attacks.white_pawn[sq] |= bb.fill_one(&Direction::Ray(RayDirection::NE));
+            attacks.white_pawn[sq] |= bb.fill_one(&Direction::Ray(RayDirection::NW));
 
-            attacks.black_pawn[sq] |= bb.fill_one(&RayDirection::SE);
-            attacks.black_pawn[sq] |= bb.fill_one(&RayDirection::SW);
+            attacks.black_pawn[sq] |= bb.fill_one(&Direction::Ray(RayDirection::SE));
+            attacks.black_pawn[sq] |= bb.fill_one(&Direction::Ray(RayDirection::SW));
         }
 
         attacks
@@ -116,14 +117,14 @@ impl Attacks {
     /// a square given "blockers" (i.e. other pieces which may already
     /// exist on the board).
     pub fn bishop(&self, sq: Square, blockers: Bitboard) -> Bitboard {
-        self.sliding_piece_attacks(sq, blockers, &BISHOP_DIRS)
+        self.sliding_piece_attacks(sq, blockers, &Direction::BISHOP_DIRS)
     }
 
     /// Returns a [`Bitboard`] of all squares attacked by a rook on
     /// a square given "blockers" (i.e. other pieces which may already
     /// exist on the board).
     pub fn rook(&self, sq: Square, blockers: Bitboard) -> Bitboard {
-        self.sliding_piece_attacks(sq, blockers, &ROOK_DIRS)
+        self.sliding_piece_attacks(sq, blockers, &Direction::ROOK_DIRS)
     }
 
     /// Returns a [`Bitboard`] of all squares attacked by a queen on

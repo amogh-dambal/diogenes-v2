@@ -136,6 +136,49 @@ impl ShlAssign<isize> for Bitboard {
     }
 }
 
+impl Shl<&Direction> for Bitboard {
+    type Output = Self;
+
+    fn shl(self, rhs: &Direction) -> Self::Output {
+        let shift = rhs.shift();
+        let mask = rhs.mask();
+
+        if shift > 0 {
+            Self((self.0 << shift) & mask)
+        } else {
+            Self((self.0 >> -shift) & mask)
+        }
+    }
+}
+
+impl Shl<Direction> for Bitboard {
+    type Output = Self;
+
+    fn shl(self, rhs: Direction) -> Self::Output {
+        self << &rhs
+    }
+}
+
+impl ShlAssign<&Direction> for Bitboard {
+    fn shl_assign(&mut self, rhs: &Direction) {
+        let shift = rhs.shift();
+        let mask = rhs.mask();
+
+        if shift > 0 {
+            self.0 <<= shift;
+        } else {
+            self.0 >>= shift;
+        }
+        self.0 &= mask;
+    }
+}
+
+impl ShlAssign<Direction> for Bitboard {
+    fn shl_assign(&mut self, rhs: Direction) {
+        *self <<= &rhs
+    }
+}
+
 impl Shr<isize> for Bitboard {
     type Output = Self;
     fn shr(self, rhs: isize) -> Self::Output {
@@ -195,7 +238,7 @@ impl Bitboard {
     /// sets.
     /// TODO: If we want to optimize performance, we can
     /// unroll this loop.
-    pub fn fill_all(&self, dir: &impl Direction) -> Bitboard {
+    pub fn fill_all(&self, dir: &Direction) -> Bitboard {
         let mut flood = Bitboard(self.0);
         for _ in 0..=7 {
             flood |= flood.fill_one(dir);
@@ -205,13 +248,8 @@ impl Bitboard {
     }
 
     /// Generic fill algorithm which fills a bitboard in a given direction.
-    pub fn fill_one(&self, dir: &impl Direction) -> Bitboard {
-        let mut result = Bitboard(self.0);
-        let shift = dir.get_shift();
-        let mask = dir.get_wraparound_mask();
-        result |= (result << shift) & mask;
-
-        result
+    pub fn fill_one(&self, dir: &Direction) -> Bitboard {
+        Bitboard(self.0) << dir
     }
 
     // Utility functions to compute information about bitboards
@@ -297,7 +335,10 @@ impl Bitboard {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board, direction::RayDirection};
+    use crate::{
+        board,
+        direction::{Direction, KnightDirection, RayDirection},
+    };
 
     use super::Bitboard;
     use rand::Rng;
@@ -318,12 +359,12 @@ mod tests {
     fn test_fill() {
         let x = Bitboard(0xFF00);
         let x_south = Bitboard(0xFFFF);
-        assert_eq!(x_south, x.fill_all(&RayDirection::S));
+        assert_eq!(x_south, x.fill_all(&Direction::Ray(RayDirection::S)));
 
         let x_north = Bitboard(0xFFFFFFFFFFFFFF00);
-        assert_eq!(x_north, x.fill_all(&RayDirection::N));
+        assert_eq!(x_north, x.fill_all(&Direction::Ray(RayDirection::N)));
 
-        let y = Bitboard(0b1).fill_all(&RayDirection::N);
+        let y = Bitboard(0b1).fill_all(&Direction::Ray(RayDirection::N));
         let y_east = Bitboard(board::ALL_SQUARES);
         assert_eq!(y_east, y.fill_all(&RayDirection::E));
         assert_eq!(y, y.fill_all(&RayDirection::W));
