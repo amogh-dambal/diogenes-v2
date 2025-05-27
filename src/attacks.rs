@@ -71,7 +71,7 @@ impl Attacks {
             rays: [AttackSet::default(); 8],
         };
 
-        for sq in Square::iter().take(63) {
+        for sq in Square::iter() {
             let bb = sq.bitboard();
 
             for (dir_idx, ray_dir) in RayDirection::iter().enumerate() {
@@ -81,7 +81,7 @@ impl Attacks {
             }
 
             for kdir in KnightDirection::iter() {
-                attacks.knight[sq] = bb.fill_all(&kdir) & !bb;
+                attacks.knight[sq] |= bb.fill_one(&Direction::Knight(kdir)) & !bb;
             }
 
             attacks.white_pawn[sq] |= bb.fill_one(&Direction::Ray(RayDirection::NE));
@@ -195,8 +195,20 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_knight() {}
+    #[rstest]
+    #[case::knight_no_blockers(
+        Square::F3,
+        Bitboard::default(),
+        Bitboard::new(0b0101000010001000000000001000100001010000)
+    )]
+    fn test_knight(#[case] square: Square, #[case] blockers: Bitboard, #[case] expected: Bitboard) {
+        let attacks = Attacks::new();
+        let actual = attacks.knight(square, blockers);
+        assert_eq!(
+            expected, actual,
+            "expected\n{expected:?} but got\n{actual:?}"
+        );
+    }
 
     #[test]
     fn test_pawn() {}

@@ -366,8 +366,25 @@ mod tests {
 
         let y = Bitboard(0b1).fill_all(&Direction::Ray(RayDirection::N));
         let y_east = Bitboard(board::ALL_SQUARES);
-        assert_eq!(y_east, y.fill_all(&RayDirection::E));
-        assert_eq!(y, y.fill_all(&RayDirection::W));
+        assert_eq!(y_east, y.fill_all(&Direction::Ray(RayDirection::E)));
+        assert_eq!(y, y.fill_all(&Direction::Ray(RayDirection::W)));
+    }
+
+    #[test]
+    fn test_fill_one() {
+        let x = Bitboard(0b01000000);
+        let x_nne = Bitboard(0b100000000000000000000000);
+        let x_filled = x.fill_one(&Direction::Knight(KnightDirection::NNE));
+        assert_eq!(x_nne, x_filled, "expected\n{x_nne:?} but got\n{x_filled:?}",);
+
+        let x = Bitboard(1 << 21);
+        let x_see = Bitboard(0b1000000000000000);
+        let x_filled = x.fill_one(&Direction::Knight(KnightDirection::SEE));
+        assert_eq!(x_see, x_filled, "expected\n{x_see:?} but got\n{x_filled:?}",);
+
+        let x_sww = Bitboard(1 << 11);
+        let x_filled = x.fill_one(&Direction::Knight(KnightDirection::SWW));
+        assert_eq!(x_sww, x_filled, "expected\n{x_sww:?} but got\n{x_filled:?}");
     }
 
     #[test]
